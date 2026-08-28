@@ -1,8 +1,8 @@
 -- =================================================================
--- СКРИПТ: MbHub VIP Mega | Игра: Blox Fruits (Полная версия)
+-- СКРИПТ: MbHub VIP Mega | Игра: Blox Fruits (Исправленные кнопки)
 -- =================================================================
 
--- [1] НАСТРОЙКА КЛЮЧА И МГНОВЕННЫЙ АВТО-ХАКИ
+-- НАСТРОЙКА КЛЮЧА И МГНОВЕННЫЙ АВТО-ХАКИ
 local CorrectKey = "Menbf2"
 local UserKey = "Menbf2" 
 
@@ -44,7 +44,7 @@ local function TweenTo(cframe, speed)
     end)
 end
 
--- [2] ЖЕСТКАЯ АВТО-АТАКА И АВТО-ЭКИПИРОВКА ОРУЖИЯ
+-- ЖЕСТКАЯ АВТО-АТАКА И АВТО-ЭКИПИРОВКА ОРУЖИЯ
 local function FastAttack()
     task.spawn(function()
         while _G.Autofarm or _G.ChestFarm or _G.AutoRaid do
@@ -70,16 +70,13 @@ local function FastAttack()
     end)
 end
 
--- [3] АВТО-КВЕСТ + АВТО-ФАРМ (УМНЫЙ ПОДБОР ПО УРОВНЮ)
+-- АВТО-КВЕСТ + АВТО-ФАРМ (УМНЫЙ ПОДБОР ПО УРОВНЮ)
 local function GetQuestData()
     local lvl = LocalPlayer.Data.Level.Value
-    -- 1 МОРЕ (Остров новичков, Джунгли и т.д.)
     if lvl >= 1 and lvl < 10 then return "Bandit Quest Giver", "BanditQuest1", 1, "Bandit"
     elseif lvl >= 10 and lvl < 15 then return "Monkey Quest Giver", "JungleQuest", 1, "Monkey"
     elseif lvl >= 15 and lvl < 30 then return "Monkey Quest Giver", "JungleQuest", 2, "Gorilla"
-    -- 2 МОРЕ
     elseif lvl >= 700 and lvl < 775 then return "Raider Quest Giver", "Area1Quest", 1, "Raider"
-    -- 3 МОРЕ
     elseif lvl >= 1500 and lvl < 1575 then return "Boat Quest Giver", "BoatQuest1", 1, "Pirate Millionaire"
     else return "Bandit Quest Giver", "BanditQuest1", 1, "Bandit" end
 end
@@ -102,7 +99,6 @@ task.spawn(function()
                     for _, enemy in pairs(workspace.Enemies:GetChildren()) do
                         if enemy.Name == eName and enemy:FindFirstChild("HumanoidRootPart") and enemy.Humanoid.Health > 0 then
                             while _G.Autofarm and enemy.Humanoid.Health > 0 do
-                                -- Удерживаем вас ровно над врагом, пока работает FastAttack
                                 LocalPlayer.Character.HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0)
                                 task.wait(0.05)
                             end
@@ -114,7 +110,7 @@ task.spawn(function()
     end
 end)
 
--- [4] ЛОГИКА АВТО-СБОРА СУНДУКОВ ПО КАРТЕ
+-- ЛОГИКА АВТО-СБОРА СУНДУКОВ ПО КАРТЕ
 task.spawn(function()
     while true do
         task.wait(0.1)
@@ -139,7 +135,7 @@ task.spawn(function()
     end
 end)
 
--- [5] СОЗДАНИЕ КРАСИВОГО GUI
+-- СОЗДАНИЕ КРАСИВОГО GUI
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
@@ -170,7 +166,7 @@ ToggleButton.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFr
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
-MainFrame.Size = UDim2.new(0, 440, 0, 280)
+MainFrame.Size = UDim2.new(0, 440, 0, 320)
 MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 MainFrame.Active = true
 MainFrame.Draggable = true
@@ -194,21 +190,23 @@ Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 22
 Title.Font = Enum.Font.GothamBold
 
--- ПАНЕЛИ И КОНТЕЙНЕРЫ ДЛЯ ВКЛАДОК
+-- ВЕРХНЯЯ ПАНЕЛЬ ДЛЯ КНОПОК ВКЛАДОК
 TabContainer.Parent = MainFrame
-TabContainer.Position = UDim2.new(0, 10, 0, 45)
-TabContainer.Size = UDim2.new(0, 95, 0, 225)
+TabContainer.Position = UDim2.new(0, 10, 0, 40)
+TabContainer.Size = UDim2.new(1, -20, 0, 40)
 TabContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 TabContainer.BackgroundTransparency = 0.6
 Instance.new("UICorner").Parent = TabContainer
 
 UIListLayout.Parent = TabContainer
+UIListLayout.FillDirection = Enum.FillDirection.Horizontal
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 4)
+UIListLayout.Padding = UDim.new(0, 6)
 
+-- КОНТЕЙНЕР ДЛЯ СТРАНИЦ
 ContentContainer.Parent = MainFrame
-ContentContainer.Position = UDim2.new(0, 115, 0, 45)
-ContentContainer.Size = UDim2.new(0, 315, 0, 225)
+ContentContainer.Position = UDim2.new(0, 10, 0, 90)
+ContentContainer.Size = UDim2.new(1, -20, 0, 220)
 ContentContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 ContentContainer.BackgroundTransparency = 0.6
 Instance.new("UICorner").Parent = ContentContainer
@@ -217,24 +215,26 @@ Instance.new("UICorner").Parent = ContentContainer
 local ActivePages = {}
 local function CreateNewTab(name)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 35)
-    btn.BackgroundTransparency = 1
+    btn.Size = UDim2.new(0, 95, 1, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     btn.Text = name
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.Gotham
+    btn.Font = Enum.Font.GothamBold
     btn.TextSize = 13
     btn.Parent = TabContainer
+    Instance.new("UICorner").Parent = btn
 
     local page = Instance.new("ScrollingFrame")
-    page.Size = UDim2.new(1, 0, 1, 0)
+    page.Size = UDim2.new(1, -10, 1, -10)
+    page.Position = UDim2.new(0, 5, 0, 5)
     page.BackgroundTransparency = 1
     page.Visible = false
     page.Parent = ContentContainer
-    page.CanvasSize = UDim2.new(0, 0, 2, 0)
+    page.CanvasSize = UDim2.new(0, 0, 3, 0)
     
     local pList = Instance.new("UIListLayout")
     pList.Parent = page
-    pList.Padding = UDim.new(0, 5)
+    pList.Padding = UDim.new(0, 6)
 
     btn.MouseButton1Click:Connect(function()
         for _, p in pairs(ActivePages) do p.Visible = false end
@@ -244,14 +244,15 @@ local function CreateNewTab(name)
     return page
 end
 
--- СОЗДАНИЕ ВСЕХ 4 ВКЛАДОК (НИЧЕГО НЕ УДАЛЕНО!)
+-- СОЗДАНИЕ СТРАНИЦ
 local FarmPage = CreateNewTab("Фарм")
 local ChestPage = CreateNewTab("Сундуки")
 local ShopPage = CreateNewTab("Магазин")
 local RaidPage = CreateNewTab("Рейды")
 ActivePages["Фарм"].Visible = true
 
--- [ВКЛАДКА ФАРМ] Кнопка включения Авто-Квеста и Мега-Атаки
+-- [ВКЛАДКА ФАРМ]
 local fBtn = Instance.new("TextButton")
-fBtn.Size = UDim2.new(0, 290, 0, 40)
-fBtn.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
+fBtn.Size = UDim2.new(1, 0, 0, 45)
+fBtn.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+fBtn.Text = "Авто-Квест и Атака: ВЫКЛ"
