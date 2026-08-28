@@ -2,49 +2,13 @@ local SG = Instance.new("ScreenGui")
 SG.Name = "MenBf_Pr"
 SG.Parent = game:GetService("CoreGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
-local CorrectKey = "Men121"
-
--- ОКНО КЛЮЧА
-local KF = Instance.new("Frame")
-KF.Size = UDim2.new(0, 280, 0, 140)
-KF.Position = UDim2.new(0.5, -140, 0.5, -70)
-KF.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-KF.Active = true KF.Draggable = true KF.Parent = SG
-Instance.new("UICorner", KF).CornerRadius = UDim.new(0, 10)
-
-local KFTitle = Instance.new("TextLabel")
-KFTitle.Size = UDim2.new(1, 0, 0, 35)
-KFTitle.Text = "ВВЕДИТЕ КЛЮЧ ДОСТУПА"
-KFTitle.TextColor3 = Color3.fromRGB(255, 60, 60)
-KFTitle.TextSize = 14
-KFTitle.Font = Enum.Font.SourceSansBold
-KFTitle.BackgroundTransparency = 1 KFTitle.Parent = KF
-
-local KI = Instance.new("TextBox")
-KI.Size = UDim2.new(0.85, 0, 0, 35)
-KI.Position = UDim2.new(0.075, 0, 0.35, 0)
-KI.PlaceholderText = "Введите Ключ..."
-KI.Text = ""
-KI.TextColor3 = Color3.fromRGB(255, 255, 255)
-KI.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-KI.TextSize = 14 KI.Parent = KF
-Instance.new("UICorner", KI).CornerRadius = UDim.new(0, 6)
-
-local KB = Instance.new("TextButton")
-KB.Size = UDim2.new(0.6, 0, 0, 32)
-KB.Position = UDim2.new(0.2, 0, 0.7, 0)
-KB.Text = "ПОДТВЕРДИТЬ"
-KB.BackgroundColor3 = Color3.fromRGB(139, 0, 0)
-KB.TextColor3 = Color3.fromRGB(255, 255, 255)
-KB.TextSize = 14 KB.Font = Enum.Font.SourceSansBold KB.Parent = KF
-Instance.new("UICorner", KB).CornerRadius = UDim.new(0, 6)
-
 -- ГЛАВНОЕ ОКНО
 local MM = Instance.new("Frame")
 MM.Size = UDim2.new(0, 340, 0, 220)
 MM.Position = UDim2.new(0.5, -170, 0.5, -110)
 MM.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-MM.Visible = false MM.Active = true MM.Draggable = true MM.Parent = SG
+MM.Visible = true -- Сразу делаем видимым при старте
+MM.Active = true MM.Draggable = true MM.Parent = SG
 local St = Instance.new("UIStroke") St.Thickness = 4 St.Parent = MM
 
 task.spawn(function()
@@ -53,18 +17,15 @@ task.spawn(function()
     end
 end)
 
+-- КНОПКА ПЕРЕКЛЮЧЕНИЯ ОКНА
 local Tg = Instance.new("TextButton")
 Tg.Size = UDim2.new(0, 50, 0, 50)
 Tg.Position = UDim2.new(0, 10, 0.4, 0)
 Tg.Text = "MenBf"
-Tg.Visible = false Tg.Active = true Tg.Draggable = true SG.Name = "MenBf_Pr" Tg.Parent = SG
+Tg.Visible = true -- Сразу делаем видимой
+Tg.Active = true Tg.Draggable = true SG.Name = "MenBf_Pr" SG.Parent = SG
 Instance.new("UICorner", Tg).CornerRadius = UDim.new(0.5, 0)
 Tg.MouseButton1Click:Connect(function() MM.Visible = not MM.Visible end)
-
-KB.MouseButton1Click:Connect(function()
-    if KI.Text == CorrectKey then KF:Destroy() MM.Visible = true Tg.Visible = true
-    else KI.Text = "" KI.PlaceholderText = "НЕВЕРНЫЙ КЛЮЧ!" end
-end)
 
 local C_F = Instance.new("Frame") C_F.Size = UDim2.new(1, -90, 1, 0) C_F.Position = UDim2.new(0, 85, 0, 0) C_F.BackgroundTransparency = 1 C_F.Parent = MM
 local T1 = Instance.new("Frame") T1.Size = UDim2.new(1,0,1,0) T1.BackgroundTransparency = 1 T1.Parent = C_F
@@ -119,27 +80,23 @@ local function FastGhostFling(targetHrp)
     if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
     
     local myHrp = myChar.HumanoidRootPart
-    -- Жестко запоминаем последнюю точку на карте
     local safePosition = myHrp.CFrame 
     
     pcall(function()
-        -- Создаем бешеный крутящий момент
         local bav = Instance.new("BodyAngularVelocity")
         bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
         bav.AngularVelocity = Vector3.new(0, 999999, 0)
         bav.Parent = myHrp
         
-        -- Мгновенный таран (Смещение под землю на 1.5 шпильки для маскировки)
         if targetHrp and targetHrp.Parent then
             myHrp.CFrame = targetHrp.CFrame + Vector3.new(0, -1.5, 0)
             myHrp.AssemblyLinearVelocity = Vector3.new(99999, 99999, 99999)
         end
         
-        task.wait(0.02) -- Мгновенный импульс за 2 сотых секунды
+        task.wait(0.02)
         bav:Destroy()
     end)
     
-    -- Всегда принудительно возвращаем назад на безопасную землю
     myHrp.CFrame = safePosition
     myHrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
 end
@@ -191,7 +148,7 @@ task.spawn(function()
                     end
                 end
 
-                -- АКТИВАЦИЯ ОБНОВЛЕННОГО МГНОВЕННОГО ФЛИНГА
+                -- ФЛИНГ
                 if (_G.FS and isS) or (_G.FM and isM) then
                     FastGhostFling(hrp)
                 end
