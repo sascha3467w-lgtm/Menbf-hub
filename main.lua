@@ -1,263 +1,200 @@
--- ====================================================================
--- СКРИПТ: MenBf (для Murder Mystery 2)
--- КЛЮЧ ДЛЯ ВХОДА: Men1
--- ====================================================================
+local SG = Instance.new("ScreenGui")
+SG.Name = "MenBf_Pr"
+SG.Parent = game:GetService("CoreGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
-local CORRECT_KEY = "Men1"
+local CorrectKey = "Men121"
 
--- Создаем основу для GUI (через CoreGui)
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MenBf_MM2_Gui"
-ScreenGui.Parent = game:GetService("CoreGui")
-ScreenGui.ResetOnSpawn = false
+-- ОКНО КЛЮЧА
+local KF = Instance.new("Frame")
+KF.Size = UDim2.new(0, 280, 0, 140)
+KF.Position = UDim2.new(0.5, -140, 0.5, -70)
+KF.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+KF.Active = true KF.Draggable = true KF.Parent = SG
+Instance.new("UICorner", KF).CornerRadius = UDim.new(0, 10)
 
--- Глобальные переменные настроек
-_G.AimbotPlayers = false 
-_G.AimbotSheriff = false 
-_G.AimbotMurder = false
-_G.EspPlayers = false 
-_G.EspSheriff = false 
-_G.EspMurder = false
-_G.KillAura = false
+local KFTitle = Instance.new("TextLabel")
+KFTitle.Size = UDim2.new(1, 0, 0, 35)
+KFTitle.Text = "ВВЕДИТЕ КЛЮЧ ДОСТУПА"
+KFTitle.TextColor3 = Color3.fromRGB(255, 60, 60)
+KFTitle.TextSize = 14
+KFTitle.Font = Enum.Font.SourceSansBold
+KFTitle.BackgroundTransparency = 1 KFTitle.Parent = KF
 
--- Функция для определения ролей в MM2
-local function GetPlayerRole(plr)
-    if not plr or not plr:FindFirstChild("Backpack") or not plr.Character then return "Innocent" end
-    if plr.Backpack:FindFirstChild("Knife") or plr.Character:FindFirstChild("Knife") then return "Murder" end
-    if plr.Backpack:FindFirstChild("Gun") or plr.Character:FindFirstChild("Gun") then return "Sheriff" end
-    return "Innocent"
-end
+local KI = Instance.new("TextBox")
+KI.Size = UDim2.new(0.85, 0, 0, 35)
+KI.Position = UDim2.new(0.075, 0, 0.35, 0)
+KI.PlaceholderText = "Введите Ключ..."
+KI.Text = ""
+KI.TextColor3 = Color3.fromRGB(255, 255, 255)
+KI.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+KI.TextSize = 14 KI.Parent = KF
+Instance.new("UICorner", KI).CornerRadius = UDim.new(0, 6)
 
--- ====================================================================
--- 1. СИСТЕМА АВТОРИЗАЦИИ (КЛЮЧ)
--- ====================================================================
-local KeyFrame = Instance.new("Frame")
-KeyFrame.Size = UDim2.new(0, 300, 0, 150)
-KeyFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
-KeyFrame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-KeyFrame.BorderSizePixel = 0
-KeyFrame.Parent = ScreenGui
+local KB = Instance.new("TextButton")
+KB.Size = UDim2.new(0.6, 0, 0, 32)
+KB.Position = UDim2.new(0.2, 0, 0.7, 0)
+KB.Text = "ПОДТВЕРДИТЬ"
+KB.BackgroundColor3 = Color3.fromRGB(139, 0, 0)
+KB.TextColor3 = Color3.fromRGB(255, 255, 255)
+KB.TextSize = 14 KB.Font = Enum.Font.SourceSansBold KB.Parent = KF
+Instance.new("UICorner", KB).CornerRadius = UDim.new(0, 6)
 
-local KeyTitle = Instance.new("TextLabel")
-KeyTitle.Size = UDim2.new(1, 0, 0, 40)
-KeyTitle.Text = "MenBf MM2 — Введите ключ"
-KeyTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-KeyTitle.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-KeyTitle.Parent = KeyFrame
+-- ГЛАВНОЕ ОКНО
+local MM = Instance.new("Frame")
+MM.Size = UDim2.new(0, 340, 0, 220)
+MM.Position = UDim2.new(0.5, -170, 0.5, -110)
+MM.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MM.Visible = false MM.Active = true MM.Draggable = true MM.Parent = SG
+local St = Instance.new("UIStroke") St.Thickness = 4 St.Parent = MM
 
-local KeyInput = Instance.new("TextBox")
-KeyInput.Size = UDim2.new(0.8, 0, 0, 30)
-KeyInput.Position = UDim2.new(0.1, 0, 0.4, 0)
-KeyInput.PlaceholderText = "Ключ тут..."
-KeyInput.Text = ""
-KeyInput.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-KeyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-KeyInput.Parent = KeyFrame
-
-local KeyButton = Instance.new("TextButton")
-KeyButton.Size = UDim2.new(0.6, 0, 0, 30)
-KeyButton.Position = UDim2.new(0.2, 0, 0.7, 0)
-KeyButton.Text = "Вход"
-KeyButton.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-KeyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-KeyButton.Parent = KeyFrame
-
--- ====================================================================
--- 2. КНОПКА ОТКРЫТИЯ/ЗАКРЫТИЯ (ПЛАВАЮЩАЯ)
--- ====================================================================
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0, 60, 0, 60)
-ToggleButton.Position = UDim2.new(0, 15, 0.4, 0)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.Text = "MenBf"
-ToggleButton.TextSize = 14
-ToggleButton.Font = Enum.Font.SourceSansBold
-ToggleButton.Visible = false
-ToggleButton.Active = true
-ToggleButton.Draggable = true
-ToggleButton.Parent = ScreenGui
-
-local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(0.5, 0)
-ToggleCorner.Parent = ToggleButton
-
-local ToggleStroke = Instance.new("UIStroke")
-ToggleStroke.Thickness = 3
-ToggleStroke.Parent = ToggleButton
--- ====================================================================
--- 3. ГЛАВНОЕ ОКНО С РАДУЖНОЙ ОБВОДКОЙ
--- ====================================================================
-local MainMenu = Instance.new("Frame")
-MainMenu.Size = UDim2.new(0, 420, 0, 280)
-MainMenu.Position = UDim2.new(0.5, -210, 0.5, -140)
-MainMenu.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-MainMenu.Visible = false
-MainMenu.Active = true
-MainMenu.Draggable = true
-MainMenu.Parent = ScreenGui
-
-local MenuStroke = Instance.new("UIStroke")
-MenuStroke.Thickness = 4
-MenuStroke.Parent = MainMenu
-
--- Скрипт переливания радуги (RGB)
 task.spawn(function()
     while true do
-        for hue = 0, 1, 1/360 do
-            local rainbowColor = Color3.fromHSV(hue, 1, 1)
-            MenuStroke.Color = rainbowColor
-            ToggleStroke.Color = rainbowColor
-            KeyFrame.BackgroundColor3 = rainbowColor
-            task.wait(0.02)
-        end
+        for h = 0, 1, 1/100 do St.Color = Color3.fromHSV(h, 1, 1) task.wait(0.03) end
     end
 end)
 
-local MenuTitle = Instance.new("TextLabel")
-MenuTitle.Size = UDim2.new(1, 0, 0, 35)
-MenuTitle.Text = "  MenBf MM2 Premium Hub"
-MenuTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-MenuTitle.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MenuTitle.TextXAlignment = Enum.TextXAlignment.Left
-MenuTitle.TextSize = 16
-MenuTitle.Font = Enum.Font.SourceSansBold
-MenuTitle.Parent = MainMenu
+local Tg = Instance.new("TextButton")
+Tg.Size = UDim2.new(0, 50, 0, 50)
+Tg.Position = UDim2.new(0, 10, 0.4, 0)
+Tg.Text = "MenBf"
+Tg.Visible = false Tg.Active = true Tg.Draggable = true SG.Name = "MenBf_Pr" Tg.Parent = SG
+Instance.new("UICorner", Tg).CornerRadius = UDim.new(0.5, 0)
+Tg.MouseButton1Click:Connect(function() MM.Visible = not MM.Visible end)
 
--- Панель вкладок (Слева)
-local TabPanel = Instance.new("Frame")
-TabPanel.Size = UDim2.new(0, 110, 1, -35)
-TabPanel.Position = UDim2.new(0, 0, 0, 35)
-TabPanel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-TabPanel.Parent = MainMenu
+KB.MouseButton1Click:Connect(function()
+    if KI.Text == CorrectKey then KF:Destroy() MM.Visible = true Tg.Visible = true
+    else KI.Text = "" KI.PlaceholderText = "НЕВЕРНЫЙ КЛЮЧ!" end
+end)
 
--- Контейнеры для страниц (Справа)
-local ContentFrame = Instance.new("Frame")
-ContentFrame.Size = UDim2.new(1, -120, 1, -45)
-ContentFrame.Position = UDim2.new(0, 115, 0, 40)
-ContentFrame.BackgroundTransparency = 1
-ContentFrame.Parent = MainMenu
+local C_F = Instance.new("Frame") C_F.Size = UDim2.new(1, -90, 1, 0) C_F.Position = UDim2.new(0, 85, 0, 0) C_F.BackgroundTransparency = 1 C_F.Parent = MM
+local T1 = Instance.new("Frame") T1.Size = UDim2.new(1,0,1,0) T1.BackgroundTransparency = 1 T1.Parent = C_F
+local T2 = Instance.new("Frame") T2.Size = UDim2.new(1,0,1,0) T2.BackgroundTransparency = 1 T2.Visible = false T2.Parent = C_F
+local T3 = Instance.new("Frame") T3.Size = UDim2.new(1,0,1,0) T3.BackgroundTransparency = 1 T3.Visible = false T3.Parent = C_F
 
-local TabCombat = Instance.new("Frame") TabCombat.Size = UDim2.new(1,0,1,0) TabCombat.BackgroundTransparency = 1 TabCombat.Parent = ContentFrame
-local TabEsp = Instance.new("Frame") TabEsp.Size = UDim2.new(1,0,1,0) TabEsp.BackgroundTransparency = 1 TabEsp.Visible = false TabEsp.Parent = ContentFrame
-local TabAimbot = Instance.new("Frame") TabAimbot.Size = UDim2.new(1,0,1,0) TabAimbot.BackgroundTransparency = 1 TabAimbot.Visible = false TabAimbot.Parent = ContentFrame
+local function AddT(txt, y, f)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0, 75, 0, 30)
+    b.Position = UDim2.new(0, 5, 0, y)
+    b.Text = txt b.Parent = MM
+    b.MouseButton1Click:Connect(function() T1.Visible = false T2.Visible = false T3.Visible = false f.Visible = true end)
+end
+AddT("Combat", 10, T1) AddT("ESP", 45, T2) AddT("AimBot", 80, T3)
 
--- Кнопки вкладок
-local BtnCombat = Instance.new("TextButton") BtnCombat.Size = UDim2.new(0.9, 0, 0, 35) BtnCombat.Position = UDim2.new(0.05, 0, 0.05, 0) BtnCombat.Text = "Combat" BtnCombat.BackgroundColor3 = Color3.fromRGB(40,40,40) BtnCombat.TextColor3 = Color3.fromRGB(255,255,255) BtnCombat.Parent = TabPanel
-local BtnEsp = Instance.new("TextButton") BtnEsp.Size = UDim2.new(0.9, 0, 0, 35) BtnEsp.Position = UDim2.new(0.05, 0, 0.25, 0) BtnEsp.Text = "ESP" BtnEsp.BackgroundColor3 = Color3.fromRGB(30,30,30) BtnEsp.TextColor3 = Color3.fromRGB(255,255,255) BtnEsp.Parent = TabPanel
-local BtnAimbot = Instance.new("TextButton") BtnAimbot.Size = UDim2.new(0.9, 0, 0, 35) BtnAimbot.Position = UDim2.new(0.05, 0, 0.45, 0) BtnAimbot.Text = "AimBot" BtnAimbot.BackgroundColor3 = Color3.fromRGB(30,30,30) BtnAimbot.TextColor3 = Color3.fromRGB(255,255,255) BtnAimbot.Parent = TabPanel
+_G.AP = false _G.AS = false _G.AM = false
+_G.EP = false _G.ES = false _G.EM = false
+_G.KA = false _G.GG = false _G.FS = false _G.FM = false
 
--- Логика переключения Вкладок
-BtnCombat.MouseButton1Click:Connect(function() TabCombat.Visible = true TabEsp.Visible = false TabAimbot.Visible = false BtnCombat.BackgroundColor3 = Color3.fromRGB(40,40,40) BtnEsp.BackgroundColor3 = Color3.fromRGB(30,30,30) BtnAimbot.BackgroundColor3 = Color3.fromRGB(30,30,30) end)
-BtnEsp.MouseButton1Click:Connect(function() TabCombat.Visible = false TabEsp.Visible = true TabAimbot.Visible = false BtnCombat.BackgroundColor3 = Color3.fromRGB(30,30,30) BtnEsp.BackgroundColor3 = Color3.fromRGB(40,40,40) BtnAimbot.BackgroundColor3 = Color3.fromRGB(30,30,30) end)
-BtnAimbot.MouseButton1Click:Connect(function() TabCombat.Visible = false TabEsp.Visible = false TabAimbot.Visible = true BtnCombat.BackgroundColor3 = Color3.fromRGB(30,30,30) BtnEsp.BackgroundColor3 = Color3.fromRGB(30,30,30) BtnAimbot.BackgroundColor3 = Color3.fromRGB(40,40,40) end)
-
--- Функция создания красивых переключателей
-local function CreateToggle(name, text, pos, parent, globalVar)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.95, 0, 0, 35)
-    btn.Position = pos
-    btn.Text = text .. " [ВЫКЛ]"
-    btn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Parent = parent
-
-    btn.MouseButton1Click:Connect(function()
-        _G[globalVar] = not _G[globalVar]
-        if _G[globalVar] then
-            btn.Text = text .. " [ВКЛ]"
-            btn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        else
-            btn.Text = text .. " [ВЫКЛ]"
-            btn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-        end
+local function CreateBtn(txt, y, p, gv)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0.95, 0, 0, 28)
+    b.Position = UDim2.new(0, 0, 0, y)
+    b.Text = txt .. " [OFF]"
+    b.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    b.TextColor3 = Color3.fromRGB(255, 255, 255)
+    b.Parent = p
+    b.MouseButton1Click:Connect(function()
+        _G[gv] = not _G[gv]
+        b.Text = txt .. (_G[gv] and " [ON]" or " [OFF]")
+        b.BackgroundColor3 = _G[gv] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
     end)
-    return btn
 end
 
--- ====================================================================
--- НАПОЛНЕНИЕ ВКЛАДОК (КНОПКИ ВКЛ/ВЫКЛ)
--- ====================================================================
-CreateToggle("KillAura", "KillAura (Радиус атаки)", UDim2.new(0, 0, 0.05, 0), TabCombat, "KillAura")
+CreateBtn("KillAura", 5, T1, "KA")
+CreateBtn("Auto Grab Gun", 35, T1, "GG")
+CreateBtn("Fling Sheriff", 65, T1, "FS")
+CreateBtn("Fling Murder", 95, T1, "FM")
 
-CreateToggle("EspPlr", "ESP Players (Игроки)", UDim2.new(0, 0, 0.05, 0), TabEsp, "EspPlayers")
-CreateToggle("EspShr", "ESP Sheriff (Шериф)", UDim2.new(0, 0, 0.25, 0), TabEsp, "EspSheriff")
-CreateToggle("EspMrd", "ESP Murder (Убийца)", UDim2.new(0, 0, 0.45, 0), TabEsp, "EspMurder")
+CreateBtn("ESP Players", 5, T2, "EP")
+CreateBtn("ESP Sheriff", 35, T2, "ES")
+CreateBtn("ESP Murder", 65, T2, "EM")
 
-CreateToggle("AimPlr", "AimBot Players (Игроки)", UDim2.new(0, 0, 0.05, 0), TabAimbot, "AimbotPlayers")
-CreateToggle("AimShr", "AimBot Sheriff (Шериф)", UDim2.new(0, 0, 0.25, 0), TabAimbot, "AimbotSheriff")
-CreateToggle("AimMrd", "AimBot Murder (Убийца)", UDim2.new(0, 0, 0.45, 0), TabAimbot, "AimbotMurder")
+CreateBtn("Aim Players", 5, T3, "AP")
+CreateBtn("Aim Sheriff", 35, T3, "AS")
+CreateBtn("Aim Murder", 65, T3, "AM")
 
--- ====================================================================
--- ФУНКЦИОНАЛЬНАЯ ЛОГИКА
--- ====================================================================
+-- МГНОВЕННЫЙ НЕВИДИМЫЙ ФЛИНГ
+local function FastGhostFling(targetHrp)
+    local lp = game:GetService("Players").LocalPlayer
+    local myChar = lp.Character
+    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+    
+    local myHrp = myChar.HumanoidRootPart
+    -- Жестко запоминаем последнюю точку на карте
+    local safePosition = myHrp.CFrame 
+    
+    pcall(function()
+        -- Создаем бешеный крутящий момент
+        local bav = Instance.new("BodyAngularVelocity")
+        bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bav.AngularVelocity = Vector3.new(0, 999999, 0)
+        bav.Parent = myHrp
+        
+        -- Мгновенный таран (Смещение под землю на 1.5 шпильки для маскировки)
+        if targetHrp and targetHrp.Parent then
+            myHrp.CFrame = targetHrp.CFrame + Vector3.new(0, -1.5, 0)
+            myHrp.AssemblyLinearVelocity = Vector3.new(99999, 99999, 99999)
+        end
+        
+        task.wait(0.02) -- Мгновенный импульс за 2 сотых секунды
+        bav:Destroy()
+    end)
+    
+    -- Всегда принудительно возвращаем назад на безопасную землю
+    myHrp.CFrame = safePosition
+    myHrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+end
 
--- Проверка ключа
-KeyButton.MouseButton1Click:Connect(function()
-    if KeyInput.Text == CORRECT_KEY then
-        KeyFrame.Visible = false
-        MainMenu.Visible = true
-        ToggleButton.Visible = true
-    else
-        KeyInput.Text = ""
-        KeyInput.PlaceholderText = "НЕВЕРНЫЙ КЛЮЧ!"
-    end
-end)
-
-ToggleButton.MouseButton1Click:Connect(function()
-    MainMenu.Visible = not MainMenu.Visible
-end)
-
--- РАБОТА ЦИКЛОВ: ESP, AIMBOT, COMBAT
+-- ЦИКЛ ХАКОВ
 task.spawn(function()
-    local localPlayer = game:GetService("Players").LocalPlayer
-    local camera = game:GetService("Workspace").CurrentCamera
-
-    while task.wait(0.1) do
-        for _, plr in pairs(game:GetService("Players"):GetPlayers()) do
-            if plr ~= localPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-                local role = GetPlayerRole(plr)
-                local hrp = plr.Character.HumanoidRootPart
+    local lp = game:GetService("Players").LocalPlayer
+    local cam = game:GetService("Workspace").CurrentCamera
+    
+    while task.wait(0.05) do
+        if _G.GG and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+            local gun = game.Workspace:FindFirstChild("GunDrop") or game.Workspace:FindFirstChild("Gun") or game.Workspace:FindFirstChild("PlayerDrop")
+            if gun then
+                local targetPart = gun:IsA("BasePart") and gun or gun:FindFirstChildOfClass("BasePart")
+                if targetPart then lp.Character.HumanoidRootPart.CFrame = targetPart.CFrame end
+            end
+        end
+        
+        for _, p in pairs(game:GetService("Players"):GetPlayers()) do
+            if p ~= lp and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = p.Character.HumanoidRootPart
+                local isM = p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife")
+                local isS = p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun")
                 
-                -- Логика ESP
-                local hasHighlight = hrp:FindFirstChild("MenBf_ESP")
-                local shouldEsp = (_G.EspPlayers) or (_G.EspSheriff and role == "Sheriff") or (_G.EspMurder and role == "Murder")
-                
-                if shouldEsp then
-                    if not hasHighlight then
-                        local box = Instance.new("BoxHandleAdornment")
-                        box.Name = "MenBf_ESP"
-                        box.Size = plr.Character:GetExtentsSize()
-                        box.AlwaysOnTop = true
-                        box.ZIndex = 5
-                        box.Adornee = hrp
-                        box.Transparency = 0.4
-                        box.Parent = hrp
-                        
-                        if role == "Murder" then box.Color3 = Color3.fromRGB(255, 0, 0)
-                        elseif role == "Sheriff" then box.Color3 = Color3.fromRGB(0, 0, 255)
-                        else box.Color3 = Color3.fromRGB(0, 255, 0) end
+                -- HIGHLIGHT ESP
+                local currentHighlight = p.Character:FindFirstChild("MenESP")
+                if _G.EP or (_G.ES and isS) or (_G.EM and isM) then
+                    if not currentHighlight then
+                        local hl = Instance.new("Highlight")
+                        hl.Name = "MenESP"
+                        hl.FillTransparency = 0.4
+                        hl.FillColor = isM and Color3.fromRGB(255,0,0) or (isS and Color3.fromRGB(0,0,255) or Color3.fromRGB(0,255,0))
+                        hl.Parent = p.Character
                     end
                 else
-                    if hasHighlight then hasHighlight:Destroy() end
+                    if currentHighlight then currentHighlight:Destroy() end
                 end
 
-                -- Логика AIMBOT
-                local shouldAim = (_G.AimbotPlayers) or (_G.AimbotSheriff and role == "Sheriff") or (_G.AimbotMurder and role == "Murder")
-                if shouldAim and localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    local dist = (localPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude
-                    if dist < 120 then
-                        camera.CFrame = CFrame.new(camera.CFrame.Position, hrp.Position)
+                -- AIMBOT
+                if _G.AP or (_G.AS and isS) or (_G.AM and isM) then
+                    cam.CFrame = CFrame.new(cam.CFrame.Position, hrp.Position)
+                end
+
+                -- KILL AURA
+                if _G.KA and (lp.Character:FindFirstChild("Knife") or lp.Backpack:FindFirstChild("Knife")) and not isM then
+                    local knife = lp.Character:FindFirstChild("Knife") or lp.Backpack:FindFirstChild("Knife")
+                    if (lp.Character.HumanoidRootPart.Position - hrp.Position).Magnitude < 22 then
+                        knife.Parent = lp.Character knife:Activate()
                     end
                 end
 
-                -- Логика COMBAT
-                if _G.KillAura and role == "Murder" then
-                    if localPlayer.Character:FindFirstChild("Knife") and (localPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude < 25 then
-                        localPlayer.Character.Knife:Activate()
-                    end
+                -- АКТИВАЦИЯ ОБНОВЛЕННОГО МГНОВЕННОГО ФЛИНГА
+                if (_G.FS and isS) or (_G.FM and isM) then
+                    FastGhostFling(hrp)
                 end
-
             end
         end
     end
