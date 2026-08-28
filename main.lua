@@ -1,5 +1,6 @@
 local SG = Instance.new("ScreenGui")
 SG.Name = "MenBf_Pr"
+SG.ResetOnSpawn = false
 SG.Parent = game:GetService("CoreGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
 -- ГЛАВНОЕ ОКНО
@@ -7,7 +8,7 @@ local MM = Instance.new("Frame")
 MM.Size = UDim2.new(0, 340, 0, 220)
 MM.Position = UDim2.new(0.5, -170, 0.5, -110)
 MM.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-MM.Visible = true -- Сразу делаем видимым при старте
+MM.Visible = true
 MM.Active = true MM.Draggable = true MM.Parent = SG
 local St = Instance.new("UIStroke") St.Thickness = 4 St.Parent = MM
 
@@ -17,27 +18,37 @@ task.spawn(function()
     end
 end)
 
--- КНОПКА ПЕРЕКЛЮЧЕНИЯ ОКНА
+-- КНОПКА ПЕРЕКЛЮЧЕНИЯ ОКНА (Слева на экране)
 local Tg = Instance.new("TextButton")
 Tg.Size = UDim2.new(0, 50, 0, 50)
 Tg.Position = UDim2.new(0, 10, 0.4, 0)
 Tg.Text = "MenBf"
-Tg.Visible = true -- Сразу делаем видимой
-Tg.Active = true Tg.Draggable = true SG.Name = "MenBf_Pr" SG.Parent = SG
+Tg.Visible = true
+Tg.Active = true Tg.Draggable = true Tg.Parent = SG
 Instance.new("UICorner", Tg).CornerRadius = UDim.new(0.5, 0)
 Tg.MouseButton1Click:Connect(function() MM.Visible = not MM.Visible end)
 
-local C_F = Instance.new("Frame") C_F.Size = UDim2.new(1, -90, 1, 0) C_F.Position = UDim2.new(0, 85, 0, 0) C_F.BackgroundTransparency = 1 C_F.Parent = MM
-local T1 = Instance.new("Frame") T1.Size = UDim2.new(1,0,1,0) T1.BackgroundTransparency = 1 T1.Parent = C_F
+-- КОНТЕЙНЕР ДЛЯ ВКЛАДОК (Справа от кнопок навигации)
+local C_F = Instance.new("Frame") 
+C_F.Size = UDim2.new(1, -95, 1, -10) 
+C_F.Position = UDim2.new(0, 90, 0, 5) 
+C_F.BackgroundTransparency = 1 
+C_F.Parent = MM
+
+local T1 = Instance.new("Frame") T1.Size = UDim2.new(1,0,1,0) T1.BackgroundTransparency = 1 T1.Visible = true T1.Parent = C_F
 local T2 = Instance.new("Frame") T2.Size = UDim2.new(1,0,1,0) T2.BackgroundTransparency = 1 T2.Visible = false T2.Parent = C_F
 local T3 = Instance.new("Frame") T3.Size = UDim2.new(1,0,1,0) T3.BackgroundTransparency = 1 T3.Visible = false T3.Parent = C_F
 
+-- ФУНКЦИЯ СОЗДАНИЯ КНОПОК НАВИГАЦИИ (Слева в окне)
 local function AddT(txt, y, f)
     local b = Instance.new("TextButton")
     b.Size = UDim2.new(0, 75, 0, 30)
     b.Position = UDim2.new(0, 5, 0, y)
     b.Text = txt b.Parent = MM
-    b.MouseButton1Click:Connect(function() T1.Visible = false T2.Visible = false T3.Visible = false f.Visible = true end)
+    b.MouseButton1Click:Connect(function() 
+        T1.Visible = false T2.Visible = false T3.Visible = false 
+        f.Visible = true 
+    end)
 end
 AddT("Combat", 10, T1) AddT("ESP", 45, T2) AddT("AimBot", 80, T3)
 
@@ -45,6 +56,7 @@ _G.AP = false _G.AS = false _G.AM = false
 _G.EP = false _G.ES = false _G.EM = false
 _G.KA = false _G.GG = false _G.FS = false _G.FM = false
 
+-- ФУНКЦИЯ СОЗДАНИЯ ТУМБЛЕРОВ ФУНКЦИЙ
 local function CreateBtn(txt, y, p, gv)
     local b = Instance.new("TextButton")
     b.Size = UDim2.new(0.95, 0, 0, 28)
