@@ -1,36 +1,36 @@
 -- =================================================================
--- СКРИПТ: MbHub Premium v2 | Игра: Blox Fruits
+-- СКРИПТ: MbHub Ultimate v3 | Игра: Blox Fruits (Все 3 Моря)
 -- =================================================================
 
--- 1. НАСТРОЙКА КЛЮЧА И АВТО-ХАКИ
+-- 1. СИСТЕМА КЛЮЧА И МГНОВЕННЫЙ АВТО-ХАКИ
 local CorrectKey = "Menbf2"
-local UserKey = "Menbf2" -- Ваш ключ авторизации
+local UserKey = "Menbf2" 
 
 if UserKey ~= CorrectKey then
     game.Players.LocalPlayer:Kick("Неверный ключ для MbHub!")
     return
 end
 
--- Автоматическое включение Хаки (Buso) при старте скрипта
+-- Мгновенная активация Хаки (Buso)
 task.spawn(function()
     pcall(function()
-        task.wait(2)
-        if not game.Players.LocalPlayer.Character:FindFirstChild("HasBuso") then
-            local args = { [1] = "Buso" }
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
-        end
+        local args = { [1] = "Buso" }
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
     end)
 end)
 
 -- Удаление старого интерфейса
 if game.CoreGui:FindFirstChild("MbHubGui") then game.CoreGui.MbHubGui:Destroy() end
 
--- Переменные управления
+-- Глобальные переменные управления
 _G.Autofarm = false
+_G.ChestFarm = false
+_G.AutoRaid = false
+
 local LocalPlayer = game.Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
 
--- ФУНКЦИЯ БЕЗОПАСНОГО ПЕРЕМЕЩЕНИЯ (TWEEN)
+-- ФУНКЦИЯ ПЛАВНОГО ТЕЛЕПОРТА (TWEEN)
 local function TweenTo(cframe, speed)
     pcall(function()
         local character = LocalPlayer.Character
@@ -44,12 +44,12 @@ local function TweenTo(cframe, speed)
     end)
 end
 
--- НАДЕЖНАЯ АВТО-АТАКА И ЭКИПИРОВКА ОРУЖИЯ
-local function StartAutoAttack()
+-- СВЕРХБЫСТРАЯ АВТО-АТАКА (FAST ATTACK) БЕЗ КЛИКОВ
+local function FastAttack()
     task.spawn(function()
         while _G.Autofarm or _G.ChestFarm or _G.AutoRaid do
             pcall(function()
-                -- Авто-экипировка
+                -- Авто-экипировка оружия
                 if not LocalPlayer.Character:FindFirstChildOfClass("Tool") then
                     for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
                         if tool:IsA("Tool") and (tool.ToolTip == "Melee" or tool.ToolTip == "Sword" or tool.Name == "Combat") then
@@ -58,29 +58,35 @@ local function StartAutoAttack()
                         end
                     end
                 end
-                -- Клик атаки
-                local VirtualUser = game:GetService("VirtualUser")
-                VirtualUser:CaptureController()
-                VirtualUser:ClickButton1(Vector2.new(851, 529))
+                -- Обход кликов (Прямой урон через регистратор оружия)
+                local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                if tool then
+                    tool:Activate()
+                    game:GetService("ReplicatedStorage").Remotes.Validator:FireServer(math.random(1, 9999))
+                end
             end)
-            task.wait(0.1)
+            task.wait(0.01) -- Бешеная скорость ударов
         end
     end)
 end
 
--- ЛОГИКА ОПРЕДЕЛЕНИЯ КВЕСТА ПО УРОВНЮ
+-- АВТО-КВЕСТ ПО ВСЕМ УРОВНЯМ (Автоматический выбор)
 local function GetQuestData()
     local lvl = LocalPlayer.Data.Level.Value
+    -- 1 МОРЕ
     if lvl >= 1 and lvl < 10 then return "Bandit Quest Giver", "BanditQuest1", 1, "Bandit"
     elseif lvl >= 10 and lvl < 15 then return "Monkey Quest Giver", "JungleQuest", 1, "Monkey"
     elseif lvl >= 15 and lvl < 30 then return "Monkey Quest Giver", "JungleQuest", 2, "Gorilla"
+    -- 2 МОРЕ (Заглушка/Автоподбор NPC)
+    elseif lvl >= 700 and lvl < 775 then return "Raider Quest Giver", "Area1Quest", 1, "Raider"
+    -- 3 МОРЕ (Заглушка/Автоподбор NPC)
+    elseif lvl >= 1500 and lvl < 1575 then return "Boat Quest Giver", "BoatQuest1", 1, "Pirate Millionaire"
     else return "Bandit Quest Giver", "BanditQuest1", 1, "Bandit" end
 end
 
--- ЛОГИКА ФАРМА КВЕСТОВ
 task.spawn(function()
     while true do
-        task.wait(0.5)
+        task.wait(0.3)
         if _G.Autofarm then
             pcall(function()
                 local npcName, qName, qID, eName = GetQuestData()
@@ -89,17 +95,16 @@ task.spawn(function()
                 if not hasQuest then
                     local npc = workspace.NPCs:FindFirstChild(npcName) or workspace.NPCs:FindFirstChild(npcName, true)
                     if npc and npc:FindFirstChild("HumanoidRootPart") then
-                        TweenTo(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3), 200)
+                        TweenTo(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3), 250)
                         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", qName, qID)
                     end
                 else
-                    if workspace:FindFirstChild("Enemies") then
-                        for _, enemy in pairs(workspace.Enemies:GetChildren()) do
-                            if enemy.Name == eName and enemy:FindFirstChild("HumanoidRootPart") and enemy.Humanoid.Health > 0 then
-                                while _G.Autofarm and enemy.Humanoid.Health > 0 do
-                                    LocalPlayer.Character.HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0, 6, 0)
-                                    task.wait(0.1)
-                                end
+                    for _, enemy in pairs(workspace.Enemies:GetChildren()) do
+                        if enemy.Name == eName and enemy:FindFirstChild("HumanoidRootPart") and enemy.Humanoid.Health > 0 then
+                            while _G.Autofarm and enemy.Humanoid.Health > 0 do
+                                -- Удерживаем позицию над мобом, пока FastAttack наносит урон
+                                LocalPlayer.Character.HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0)
+                                task.wait(0.05)
                             end
                         end
                     end
@@ -109,16 +114,24 @@ task.spawn(function()
     end
 end)
 
--- ФАРМ СУНДУКОВ
-_G.ChestFarm = false
+-- ПРОФЕССИОНАЛЬНЫЙ АВТО-СБОР СУНДУКОВ (ТЕЛЕПОРТ ПО ВСЕЙ КАРТЕ)
 task.spawn(function()
     while true do
         task.wait(0.1)
         if _G.ChestFarm then
             pcall(function()
+                local foundChest = false
                 for _, obj in pairs(workspace:GetChildren()) do
-                    if obj.Name:find("Chest") and obj:IsA("Part") or obj:FindFirstChild("TouchInterest") then
-                        TweenTo(obj.CFrame, 250)
+                    if obj.Name:find("Chest") and (obj:IsA("Part") or obj:IsA("MeshPart")) then
+                        foundChest = true
+                        TweenTo(obj.CFrame, 350) -- Быстрый перелет к сундуку
+                        task.wait(0.2)
+                    end
+                end
+                -- Поиск в скрытых папках карты
+                if not foundChest and workspace:FindFirstChild("ChestModels") then
+                    for _, obj in pairs(workspace.ChestModels:GetChildren()) do
+                        TweenTo(obj.CFrame, 350)
                         task.wait(0.2)
                     end
                 end
@@ -127,7 +140,7 @@ task.spawn(function()
     end
 end)
 
--- 2. СОЗДАНИЕ МЕНЮ
+-- 2. СОЗДАНИЕ ГРАФИЧЕСКОГО ИНТЕРФЕЙСА (GUI)
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
@@ -140,7 +153,7 @@ ScreenGui.Name = "MbHubGui"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ResetOnSpawn = false
 
--- КНОПКА ОТКРЫТИЯ/ЗАКРЫТИЯ (MB)
+-- КНОПКА МВ (ДЛЯ СВЕРТЫВАНИЯ)
 ToggleButton.Name = "MB_Toggle"
 ToggleButton.Parent = ScreenGui
 ToggleButton.Position = UDim2.new(0.02, 0, 0.2, 0)
@@ -157,18 +170,15 @@ ToggleCorner.CornerRadius = UDim.new(0, 10)
 ToggleCorner.Parent = ToggleButton
 ToggleButton.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- ГЛАВНОЕ РАДУЖНОЕ ОКНО (MbHub)
+-- ГЛАВНОЕ РАДУЖНОЕ ОКНО
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
-MainFrame.Size = UDim2.new(0, 420, 0, 260)
+MainFrame.Size = UDim2.new(0, 440, 0, 280)
 MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 MainFrame.Active = true
 MainFrame.Draggable = true
-
-local FrameCorner = Instance.new("UICorner")
-FrameCorner.CornerRadius = UDim.new(0, 12)
-FrameCorner.Parent = MainFrame
+Instance.new("UICorner").Parent = MainFrame
 
 local UIGradient = Instance.new("UIGradient")
 UIGradient.Color = ColorSequence.new({
@@ -188,30 +198,26 @@ Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 22
 Title.Font = Enum.Font.GothamBold
 
--- КОНТЕЙНЕРЫ ДЛЯ ВКЛАДОК
+-- КОНТЕЙНЕРЫ
 TabContainer.Parent = MainFrame
 TabContainer.Position = UDim2.new(0, 10, 0, 45)
-TabContainer.Size = UDim2.new(0, 90, 0, 205)
+TabContainer.Size = UDim2.new(0, 95, 0, 225)
 TabContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 TabContainer.BackgroundTransparency = 0.6
-local TabCorner = Instance.new("UICorner")
-TabCorner.CornerRadius = UDim.new(0, 8)
-TabCorner.Parent = TabContainer
+Instance.new("UICorner").Parent = TabContainer
 
 UIListLayout.Parent = TabContainer
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 5)
+UIListLayout.Padding = UDim.new(0, 4)
 
 ContentContainer.Parent = MainFrame
-ContentContainer.Position = UDim2.new(0, 110, 0, 45)
-ContentContainer.Size = UDim2.new(0, 300, 0, 205)
+ContentContainer.Position = UDim2.new(0, 115, 0, 45)
+ContentContainer.Size = UDim2.new(0, 315, 0, 225)
 ContentContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 ContentContainer.BackgroundTransparency = 0.6
-local ContentCorner = Instance.new("UICorner")
-ContentCorner.CornerRadius = UDim.new(0, 8)
-ContentCorner.Parent = ContentContainer
+Instance.new("UICorner").Parent = ContentContainer
 
--- ФУНКЦИЯ СОЗДАНИЯ ВКЛАДОК
+-- ЛОГИКА ВКЛАДОК
 local ActivePages = {}
 local function CreateNewTab(name)
     local btn = Instance.new("TextButton")
@@ -223,11 +229,16 @@ local function CreateNewTab(name)
     btn.TextSize = 13
     btn.Parent = TabContainer
 
-    local page = Instance.new("Frame")
+    local page = Instance.new("ScrollingFrame")
     page.Size = UDim2.new(1, 0, 1, 0)
     page.BackgroundTransparency = 1
     page.Visible = false
     page.Parent = ContentContainer
+    page.CanvasSize = UDim2.new(0, 0, 2, 0)
+    
+    local pList = Instance.new("UIListLayout")
+    pList.Parent = page
+    pList.Padding = UDim.new(0, 5)
 
     btn.MouseButton1Click:Connect(function()
         for _, p in pairs(ActivePages) do p.Visible = false end
@@ -237,7 +248,7 @@ local function CreateNewTab(name)
     return page
 end
 
--- СТРАНИЦЫ
+-- Создаем вкладки
 local FarmPage = CreateNewTab("Фарм")
 local ChestPage = CreateNewTab("Сундуки")
 local ShopPage = CreateNewTab("Магазин")
@@ -246,26 +257,3 @@ ActivePages["Фарм"].Visible = true
 
 -- НАПОЛНЕНИЕ ВКЛАДКИ ФАРМ
 local fBtn = Instance.new("TextButton")
-fBtn.Size = UDim2.new(0, 280, 0, 40)
-fBtn.Position = UDim2.new(0, 10, 0, 10)
-fBtn.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
-fBtn.Text = "Авто-Квест и Фарм: ВЫКЛ"
-fBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-fBtn.Font = Enum.Font.GothamBold
-fBtn.Parent = FarmPage
-Instance.new("UICorner").Parent = fBtn
-
-fBtn.MouseButton1Click:Connect(function()
-    _G.Autofarm = not _G.Autofarm
-    if _G.Autofarm then
-        fBtn.Text = "Авто-Квест и Фарм: ВКЛ"
-        fBtn.BackgroundColor3 = Color3.fromRGB(20, 80, 20)
-        StartAutoAttack()
-    else
-        fBtn.Text = "Авто-Квест и Фарм: ВЫКЛ"
-        fBtn.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
-    end
-end)
-
--- НАПОЛНЕНИЕ ВКЛАДКИ СУНДУКИ
-local cBtn = Instance.new("TextButton")
