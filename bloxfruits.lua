@@ -1,45 +1,52 @@
--- Настройки скрипта
-local Settings = {
-    Enabled = true,        -- Включить/выключить аимбот (true/false)
-    TeamCheck = false,     -- Проверять на союзников (для Blox Fruits лучше false)
-    WallCheck = false,     -- Проверять стены (простреливать ли сквозь текстуры)
-    TargetRadius = 300,    -- Радиус захвата цели (в пикселях на экране)
-}
+-- Загружаем красивую и легкую UI библиотеку
+local Library = loadstring(game:HttpGet("https://githubusercontent.com"))()
+-- Создаем главное окно скрипта
+local Window = Library.CreateLib("Menbf Hub | Blox Fruits PvP", "Midnight")
 
--- Сервисы Roblox
+-- Создаем вкладку для функций
+local MainTab = Window:NewTab("PvP Функции")
+local MainSection = MainTab:NewSection("Авто-Наводка (Silent Aim)")
+
+-- Переменные для работы аима
+_G.AimbotEnabled = false
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
 local Mouse = LocalPlayer:GetMouse()
 
--- Функция поиска ближайшего противника в радиусе экрана
+-- Переключатель в меню (Вкл/Выкл)
+MainSection:NewToggle("Включить Аимбот", "Автоматически наводит скиллы на врагов", function(state)
+    _G.AimbotEnabled = state
+    if state then
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Menbf Hub",
+            Text = "Аимбот успешно активирован!",
+            Duration = 3
+        })
+    end
+end)
+
+-- Ползунок настройки радиуса захвата (FOV)
+MainSection:NewSlider("Радиус захвата (FOV)", "Насколько близко к врагу должна быть мышка", 500, 50, function(v)
+    _G.FOV_Radius = v
+end)
+_G.FOV_Radius = 300
+
+-- Безопасный поиск ближайшего игрока
 local function GetClosestPlayer()
     local ClosestTarget = nil
-    local MaxDistance = Settings.TargetRadius
+    local MaxDistance = _G.FOV_Radius
 
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") then
-            -- Проверяем, что противник жив
             if player.Character.Humanoid.Health > 0 then
-                -- Переводим 3D координаты игрока в 2D координаты экрана
-                local ScreenPosition, OnScreen = Camera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
+                local TargetPos = player.Character.HumanoidRootPart.Position
+                local LocalPos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position
                 
-                if OnScreen then
-                    -- Считаем расстояние от курсора мыши до противника
-                    local MouseDistance = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(ScreenPosition.X, ScreenPosition.Y)).Magnitude
-                    
-                    if MouseDistance < MaxDistance then
-                        -- Если включена проверка стен, проверяем видимость
-                        if Settings.WallCheck then
-                            local Parts = Camera:GetPartsObscuringTarget({player.Character.HumanoidRootPart.Position}, {LocalPlayer.Character, player.Character})
-                            if #Parts == 0 then
-                                MaxDistance = MouseDistance
-                                ClosestTarget = player
-                            end
-                        else
-                            MaxDistance = MouseDistance
-                            ClosestTarget = player
-                        end
+                if LocalPos then
+                    local Distance = (TargetPos - LocalPos).Magnitude
+                    if Distance < MaxDistance then
+                        MaxDistance = Distance
+                        ClosestTarget = player
                     end
                 end
             end
@@ -48,40 +55,18 @@ local function GetClosestPlayer()
     return ClosestTarget
 end
 
--- Хук (перехват) игрового метода для перенаправления скиллов
-local MetaTable = getrawmetatable(game)
-local OldIndex = MetaTable.__index
-local OldNamecall = MetaTable.__namecall
-setreadonly(MetaTable, false)
-
--- Перехватываем координаты мыши (куда летит скилл)
-MetaTable.__index = newcclosure(function(self, index)
-    if index == "Hit" and Settings.Enabled and not checkcaller() then
+-- Безопасный перехват направления атаки (без поломки камеры)
+local Hook; Hook = hookmetamethod(game, "__index", function(self, index)
+    if index == "Hit" and _G.AimbotEnabled and not checkcaller() then
         local Target = GetClosestPlayer()
         if Target and Target.Character and Target.Character:FindFirstChild("HumanoidRootPart") then
             return Target.Character.HumanoidRootPart.CFrame
         end
     end
-    return OldIndex(self, index)
+    return Hook(self, index)
 end)
 
--- Перехватываем направление выстрела/скилла
-MetaTable.__namecall = newcclosure(function(self, ...)
-    local Method = getnamecallmethod()
-    local Args = {...}
-    
-    if Settings.Enabled and not checkcaller() then
-        if Method == "FindPartOnRayWithIgnoreList" or Method == "FindPartOnRayWithWhitelist" or Method == "Raycast" then
-            local Target = GetClosestPlayer()
-            if Target and Target.Character and Target.Character:FindFirstChild("HumanoidRootPart") then
-                -- Перенаправляем луч атаки прямо в торс врага
-                return OldNamecall(self, Ray.new(Camera.CFrame.Position, (Target.Character.HumanoidRootPart.Position - Camera.CFrame.Position).Unit * 10000))
-            end
-        end
-    end
-    
-    return OldNamecall(self, ...)
-end)
-
-setreadonly(MetaTable, true)
-print("Menbf-hub: Blox Fruits PvP Silent Aim успешно загружен!")
+-- Вкладка Инфо
+local InfoTab = Window:NewTab("Информация")
+local InfoSection = InfoTab:NewSection("Создатель: sascha3467w-lgtm")
+InfoSection:NewLabel("Скрипт создан специально для Delta X")
