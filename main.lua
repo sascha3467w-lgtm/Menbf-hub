@@ -1,251 +1,221 @@
--- =================================================================
--- СКРИПТ: MbHub GOD v4 | Игра: Blox Fruits (Второе Море + Боссы)
--- =================================================================
+-- ====================================================================
+-- СКРИПТ: MenBf (для Murder Mystery 2)
+-- КЛЮЧ ДЛЯ ВХОДА: Men1
+-- ====================================================================
 
--- НАСТРОЙКА КЛЮЧА И МГНОВЕННЫЙ АВТО-ХАКИ
-local CorrectKey = "Menbf2"
-local UserKey = "Menbf2" 
+local CORRECT_KEY = "Men1"
 
-if UserKey ~= CorrectKey then
-    game.Players.LocalPlayer:Kick("Неверный ключ для MbHub!")
-    return
-end
-
--- Мгновенная активация Хаки (Buso) при инжекте
-task.spawn(function()
-    pcall(function()
-        local args = { [1] = "Buso" }
-        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
-    end)
-end)
-
--- Удаление старого GUI
-if game.CoreGui:FindFirstChild("MbHubGui") then game.CoreGui.MbHubGui:Destroy() end
-
--- Переменные управления
-_G.Autofarm = false
-_G.ChestFarm = false
-_G.AutoRaid = false
-_G.BossFarm = false
-_G.SelectedBoss = "Jeremy" -- По умолчанию
-
-local LocalPlayer = game.Players.LocalPlayer
-local TweenService = game:GetService("TweenService")
-
--- ФУНКЦИЯ ПЛАВНОГО И БЕЗОПАСНОГО ПОЛЕТА (TWEEN)
-local function TweenTo(cframe, speed)
-    local character = LocalPlayer.Character
-    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
-    local distance = (character.HumanoidRootPart.Position - cframe.Position).Magnitude
-    local duration = distance / speed
-    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
-    local tween = TweenService:Create(character.HumanoidRootPart, tweenInfo, {CFrame = cframe})
-    tween:Play()
-    tween.Completed:Wait()
-end
-
--- ЖЕСТКАЯ АВТО-АТАКА + АВТО-КЛИКЕР
-local function StartMegaAttack()
-    task.spawn(function()
-        while _G.Autofarm or _G.ChestFarm or _G.AutoRaid or _G.BossFarm do
-            pcall(function()
-                -- 1. Экипировка оружия
-                if not LocalPlayer.Character:FindFirstChildOfClass("Tool") then
-                    for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
-                        if tool:IsA("Tool") and (tool.ToolTip == "Melee" or tool.ToolTip == "Sword" or tool.Name == "Combat") then
-                            LocalPlayer.Character.Humanoid:EquipTool(tool)
-                            break
-                        end
-                    end
-                end
-                -- 2. Физический клик + Фаст Атак
-                local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                if tool then
-                    tool:Activate()
-                    local VirtualUser = game:GetService("VirtualUser")
-                    VirtualUser:CaptureController()
-                    VirtualUser:ClickButton1(Vector2.new(851, 529))
-                    game:GetService("ReplicatedStorage").Remotes.Validator:FireServer(math.random(1, 9999))
-                end
-            end)
-            task.wait(0.01) -- Бешеная скорость ударов
-        end
-    end)
-end
-
--- ЛОГИКА ОПРЕДЕЛЕНИЯ КВЕСТА ДЛЯ 2 МОРЯ
-local function GetQuestData()
-    local lvl = LocalPlayer.Data.Level.Value
-    if lvl >= 700 and lvl < 775 then return "Raider Quest Giver", "Area1Quest", 1, "Raider"
-    elseif lvl >= 775 and lvl < 875 then return "Raider Quest Giver", "Area1Quest", 2, "Mercenary"
-    elseif lvl >= 875 and lvl < 900 then return "Swan Bandit Quest Giver", "Area2Quest", 1, "Swan Bandit"
-    else return "Raider Quest Giver", "Area1Quest", 1, "Raider" end
-end
-
--- ЦИКЛ АВТО-КВЕСТА И АВТО-ФАРМА
-task.spawn(function()
-    while true do
-        task.wait(0.5)
-        if _G.Autofarm then
-            pcall(function()
-                local npcName, qName, qID, eName = GetQuestData()
-                local hasQuest = LocalPlayer.PlayerGui.Main:FindFirstChild("Quest") and LocalPlayer.PlayerGui.Main.Quest.Visible
-                
-                if not hasQuest then
-                    local npc = workspace.NPCs:FindFirstChild(npcName) or workspace.NPCs:FindFirstChild(npcName, true)
-                    if npc and npc:FindFirstChild("HumanoidRootPart") then
-                        TweenTo(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3), 200)
-                        task.wait(0.5)
-                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", qName, qID)
-                    end
-                else
-                    for _, enemy in pairs(workspace.Enemies:GetChildren()) do
-                        if enemy.Name == eName and enemy:FindFirstChild("HumanoidRootPart") and enemy.Humanoid.Health > 0 then
-                            while _G.Autofarm and enemy.Humanoid.Health > 0 do
-                                LocalPlayer.Character.HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0, 6, 0)
-                                task.wait(0.05)
-                            end
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- ФАРМ ВЫБРАННОГО БОССА (2 МОРЕ)
-task.spawn(function()
-    while true do
-        task.wait(0.5)
-        if _G.BossFarm then
-            pcall(function()
-                local bossName = _G.SelectedBoss
-                local targetBoss = workspace.Enemies:FindFirstChild(bossName) or workspace:FindFirstChild(bossName, true)
-                
-                if targetBoss and targetBoss:FindFirstChild("HumanoidRootPart") and targetBoss.Humanoid.Health > 0 then
-                    -- Летим к боссу и удерживаем позицию сверху
-                    LocalPlayer.Character.HumanoidRootPart.CFrame = targetBoss.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0)
-                else
-                    -- Если босса нет, летим на точку его спавна, чтобы подождать
-                    if bossName == "Jeremy" then
-                        TweenTo(CFrame.new(2316, 449, -782), 200)
-                    elseif bossName == "Fajita" then
-                        TweenTo(CFrame.new(-2085, 431, -1470), 200)
-                    elseif bossName == "Diamond" then
-                        TweenTo(CFrame.new(-1204, 332, -1524), 200)
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- БЕЗОПАСНЫЙ СБОР СУНДУКОВ (TWEEN ПО КАРТЕ)
-task.spawn(function()
-    while true do
-        task.wait(0.1)
-        if _G.ChestFarm then
-            pcall(function()
-                for _, obj in pairs(workspace:GetChildren()) do
-                    if obj.Name:find("Chest") and (obj:IsA("Part") or obj:IsA("MeshPart")) then
-                        TweenTo(obj.CFrame, 250)
-                        task.wait(0.3)
-                        break
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- =================================================================
--- ГРАФИЧЕСКИЙ ИНТЕРФЕЙС GUI (РАДУЖНЫЙ)
--- =================================================================
+-- Основа интерфейса
 local ScreenGui = Instance.new("ScreenGui")
-local MainFrame = Instance.new("Frame")
-local Title = Instance.new("TextLabel")
+ScreenGui.Name = "MenBf_MM2_Gui"
+ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.ResetOnSpawn = false
+
+-- Глобальные переменные настроек
+_G.AimbotPlayers = false _G.AimbotSheriff = false _G.AimbotMurder = false
+_G.EspPlayers = false _G.EspSheriff = false _G.EspMurder = false
+_G.KillAura = false
+
+-- Функция для определения ролей в MM2
+local function GetPlayerRole(plr)
+    if not plr or not plr:FindFirstChild("Backpack") or not plr.Character then return "Innocent" end
+    if plr.Backpack:FindFirstChild("Knife") or plr.Character:FindFirstChild("Knife") then return "Murder" end
+    if plr.Backpack:FindFirstChild("Gun") or plr.Character:FindFirstChild("Gun") then return "Sheriff" end
+    return "Innocent"
+end
+
+-- ====================================================================
+-- 1. СИСТЕМА АВТОРИЗАЦИИ (КЛЮЧ)
+-- ====================================================================
+local KeyFrame = Instance.new("Frame")
+KeyFrame.Size = UDim2.new(0, 300, 0, 150)
+KeyFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
+KeyFrame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+KeyFrame.BorderSizePixel = 0
+KeyFrame.Parent = ScreenGui
+
+local KeyTitle = Instance.new("TextLabel")
+KeyTitle.Size = UDim2.new(1, 0, 0, 40)
+KeyTitle.Text = "MenBf MM2 — Введите ключ"
+KeyTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyTitle.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+KeyTitle.Parent = KeyFrame
+
+local KeyInput = Instance.new("TextBox")
+KeyInput.Size = UDim2.new(0.8, 0, 0, 30)
+KeyInput.Position = UDim2.new(0.1, 0, 0.4, 0)
+KeyInput.PlaceholderText = "Ключ тут..."
+KeyInput.Text = ""
+KeyInput.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+KeyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyInput.Parent = KeyFrame
+
+local KeyButton = Instance.new("TextButton")
+KeyButton.Size = UDim2.new(0.6, 0, 0, 30)
+KeyButton.Position = UDim2.new(0.2, 0, 0.7, 0)
+KeyButton.Text = "Вход"
+KeyButton.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+KeyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyButton.Parent = KeyFrame
+
+-- ====================================================================
+-- 2. КНОПКА ОТКРЫТИЯ/ЗАКРЫТИЯ (ПЛАВАЮЩАЯ)
+-- ====================================================================
 local ToggleButton = Instance.new("TextButton")
-local ContentScroll = Instance.new("ScrollingFrame")
-local UIListLayout = Instance.new("UIListLayout")
-
-ScreenGui.Name = "MbHubGui"
-ScreenGui.Parent = game.CoreGui
-
--- КНОПКА МВ (ДЛЯ СВЕРТЫВАНИЯ)
-ToggleButton.Name = "MB_Toggle"
-ToggleButton.Parent = ScreenGui
-ToggleButton.Position = UDim2.new(0.02, 0, 0.2, 0)
-ToggleButton.Size = UDim2.new(0, 50, 0, 50)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-ToggleButton.Text = "MB"
+ToggleButton.Size = UDim2.new(0, 60, 0, 60)
+ToggleButton.Position = UDim2.new(0, 15, 0.4, 0)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.TextSize = 18
+ToggleButton.Text = "MenBf"
+ToggleButton.TextSize = 14
+ToggleButton.Font = Enum.Font.SourceSansBold
+ToggleButton.Visible = false
+ToggleButton.Active = true
 ToggleButton.Draggable = true
-Instance.new("UICorner").Parent = ToggleButton
-ToggleButton.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
+ToggleButton.Parent = ScreenGui
 
--- ГЛАВНОЕ РАДУЖНОЕ ОКНО
-MainFrame.Name = "MainFrame"
-MainFrame.Parent = ScreenGui
-MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
-MainFrame.Size = UDim2.new(0, 440, 0, 320)
-MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-MainFrame.Active = true
-MainFrame.Draggable = true
-Instance.new("UICorner").Parent = MainFrame
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0.5, 0)
+ToggleCorner.Parent = ToggleButton
 
-local UIGradient = Instance.new("UIGradient")
-UIGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
-    ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 255, 0)),
-    ColorSequenceKeypoint.new(0.7, Color3.fromRGB(0, 0, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
-})
-UIGradient.Parent = MainFrame
-task.spawn(function() while task.wait(0.03) do UIGradient.Rotation = UIGradient.Rotation + 1 end end)
+-- Радужная обводка для плавающей кнопки
+local ToggleStroke = Instance.new("UIStroke")
+ToggleStroke.Thickness = 3
+ToggleStroke.Parent = ToggleButton
 
-Title.Parent = MainFrame
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.BackgroundTransparency = 1
-Title.Text = "MbHub VIP v4"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 22
-Title.Font = Enum.Font.GothamBold
+-- ====================================================================
+-- 3. ГЛАВНОЕ ОКНО С РАДУЖНОЙ ОБВОДКОЙ
+-- ====================================================================
+local MainMenu = Instance.new("Frame")
+MainMenu.Size = UDim2.new(0, 420, 0, 280)
+MainMenu.Position = UDim2.new(0.5, -210, 0.5, -140)
+MainMenu.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainMenu.Visible = false
+MainMenu.Active = true
+MainMenu.Draggable = true
+MainMenu.Parent = ScreenGui
 
--- КОНТЕЙНЕР
-ContentScroll.Parent = MainFrame
-ContentScroll.Position = UDim2.new(0, 15, 0, 50)
-ContentScroll.Size = UDim2.new(1, -30, 1, -65)
-ContentScroll.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-ContentScroll.BackgroundTransparency = 0.5
-ContentScroll.CanvasSize = UDim2.new(0, 0, 5, 0) -- Очень длинный скролл
-Instance.new("UICorner").Parent = ContentScroll
+-- Радужная обводка меню
+local MenuStroke = Instance.new("UIStroke")
+MenuStroke.Thickness = 4
+MenuStroke.Parent = MainMenu
 
-UIListLayout.Parent = ContentScroll
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 8)
+-- Скрипт переливания радуги (RGB)
+task.spawn(function()
+    while true do
+        for hue = 0, 1, 1/360 do
+            local rainbowColor = Color3.fromHSV(hue, 1, 1)
+            MenuStroke.Color = rainbowColor
+            ToggleStroke.Color = rainbowColor
+            KeyFrame.BackgroundColor3 = rainbowColor
+            task.wait(0.02)
+        end
+    end
+end)
 
--- ФУНКЦИЯ СОЗДАНИЯ КНОПОК
-local function CreateButton(text, color, callback)
+local MenuTitle = Instance.new("TextLabel")
+MenuTitle.Size = UDim2.new(1, 0, 0, 35)
+MenuTitle.Text = "  MenBf MM2 Premium Hub"
+MenuTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+MenuTitle.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MenuTitle.TextXAlignment = Enum.TextXAlignment.Left
+MenuTitle.TextSize = 16
+MenuTitle.Font = Enum.Font.SourceSansBold
+MenuTitle.Parent = MainMenu
+
+-- Панель вкладок (Слева)
+local TabPanel = Instance.new("Frame")
+TabPanel.Size = UDim2.new(0, 110, 1, -35)
+TabPanel.Position = UDim2.new(0, 0, 0, 35)
+TabPanel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TabPanel.Parent = MainMenu
+
+-- Контейнеры для страниц (Справа)
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Size = UDim2.new(1, -120, 1, -45)
+ContentFrame.Position = UDim2.new(0, 115, 0, 40)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Parent = MainMenu
+
+local TabCombat = Instance.new("Frame") TabCombat.Size = UDim2.new(1,0,1,0) TabCombat.BackgroundTransparency = 1 task.nest = 1 TabCombat.Parent = ContentFrame
+local TabEsp = Instance.new("Frame") TabEsp.Size = UDim2.new(1,0,1,0) TabEsp.BackgroundTransparency = 1 TabEsp.Visible = false TabEsp.Parent = ContentFrame
+local TabAimbot = Instance.new("Frame") TabAimbot.Size = UDim2.new(1,0,1,0) TabAimbot.BackgroundTransparency = 1 TabAimbot.Visible = false TabAimbot.Parent = ContentFrame
+
+-- Кнопки вкладок
+local BtnCombat = Instance.new("TextButton") BtnCombat.Size = UDim2.new(0.9, 0, 0, 35) BtnCombat.Position = UDim2.new(0.05, 0, 0.05, 0) BtnCombat.Text = "Combat" BtnCombat.BackgroundColor3 = Color3.fromRGB(40,40,40) BtnCombat.TextColor3 = Color3.fromRGB(255,255,255) BtnCombat.Parent = TabPanel
+local BtnEsp = Instance.new("TextButton") BtnEsp.Size = UDim2.new(0.9, 0, 0, 35) BtnEsp.Position = UDim2.new(0.05, 0, 0.25, 0) BtnEsp.Text = "ESP" BtnEsp.BackgroundColor3 = Color3.fromRGB(30,30,30) BtnEsp.TextColor3 = Color3.fromRGB(255,255,255) BtnEsp.Parent = TabPanel
+local BtnAimbot = Instance.new("TextButton") BtnAimbot.Size = UDim2.new(0.9, 0, 0, 35) BtnAimbot.Position = UDim2.new(0.05, 0, 0.45, 0) BtnAimbot.Text = "AimBot" BtnAimbot.BackgroundColor3 = Color3.fromRGB(30,30,30) BtnAimbot.TextColor3 = Color3.fromRGB(255,255,255) BtnAimbot.Parent = TabPanel
+
+-- Логика переключения Вкладок
+BtnCombat.MouseButton1Click:Connect(function() TabCombat.Visible = true TabEsp.Visible = false TabAimbot.Visible = false BtnCombat.BackgroundColor3 = Color3.fromRGB(40,40,40) BtnEsp.BackgroundColor3 = Color3.fromRGB(30,30,30) BtnAimbot.BackgroundColor3 = Color3.fromRGB(30,30,30) end)
+BtnEsp.MouseButton1Click:Connect(function() TabCombat.Visible = false TabEsp.Visible = true TabAimbot.Visible = false BtnCombat.BackgroundColor3 = Color3.fromRGB(30,30,30) BtnEsp.BackgroundColor3 = Color3.fromRGB(40,40,40) BtnAimbot.BackgroundColor3 = Color3.fromRGB(30,30,30) end)
+BtnAimbot.MouseButton1Click:Connect(function() TabCombat.Visible = false TabEsp.Visible = false TabAimbot.Visible = true BtnCombat.BackgroundColor3 = Color3.fromRGB(30,30,30) BtnEsp.BackgroundColor3 = Color3.fromRGB(30,30,30) BtnAimbot.BackgroundColor3 = Color3.fromRGB(40,40,40) end)
+
+-- Функция создания красивых переключателей (Toggle ToggleButton)
+local function CreateToggle(name, text, pos, parent, globalVar)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -10, 0, 45)
-    btn.BackgroundColor3 = color
-    btn.Text = text
+    btn.Size = UDim2.new(0.95, 0, 0, 35)
+    btn.Position = pos
+    btn.Text = text .. " [ВЫКЛ]"
+    btn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 14
-    btn.Parent = ContentScroll
-    Instance.new("UICorner").Parent = btn
-    btn.MouseButton1Click:Connect(callback)
+    btn.Parent = parent
+
+    btn.MouseButton1Click:Connect(function()
+        _G[globalVar] = not _G[globalVar]
+        if _G[globalVar] then
+            btn.Text = text .. " [ВКЛ]"
+            btn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        else
+            btn.Text = text .. " [ВЫКЛ]"
+            btn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+        end
+    end)
     return btn
 end
 
--- ==========================================
--- КНОПКИ ФУНКЦИЙ НА ЭКРАНЕ
--- ==========================================
+-- ====================================================================
+-- НАПОЛНЕНИЕ ВКЛАДОК (КНОПКИ ВКЛ/ВЫКЛ)
+-- ====================================================================
 
--- 1. Авто-Фарм уровня + Квесты
-local farmToggle = CreateButton("🔴 Включить Авто-Квест и Атаку", Color3.fromRGB(130, 30, 30), function()
-    _G.Autofarm = not _G.Autofarm
-        
+-- 1 Вкладка: Combat
+CreateToggle("KillAura", "KillAura (Радиус атаки)", UDim2.new(0, 0, 0.05, 0), TabCombat, "KillAura")
+
+-- 2 Вкладка: ESP
+CreateToggle("EspPlr", "ESP Players (Игроки)", UDim2.new(0, 0, 0.05, 0), TabEsp, "EspPlayers")
+CreateToggle("EspShr", "ESP Sheriff (Шериф)", UDim2.new(0, 0, 0.25, 0), TabEsp, "EspSheriff")
+CreateToggle("EspMrd", "ESP Murder (Убийца)", UDim2.new(0, 0, 0.45, 0), TabEsp, "EspMurder")
+
+-- 3 Вкладка: AimBot
+CreateToggle("AimPlr", "AimBot Players (Игроки)", UDim2.new(0, 0, 0.05, 0), TabAimbot, "AimbotPlayers")
+CreateToggle("AimShr", "AimBot Sheriff (Шериф)", UDim2.new(0, 0, 0.25, 0), TabAimbot, "AimbotSheriff")
+CreateToggle("AimMrd", "AimBot Murder (Убийца)", UDim2.new(0, 0, 0.45, 0), TabAimbot, "AimbotMurder")
+
+-- ====================================================================
+-- ФУНКЦИОНАЛЬНАЯ ЛОГИКА СНАЙПЕРСТВА, ЕСП И АУРЫ
+-- ====================================================================
+
+-- Проверка ключа Men1
+KeyButton.MouseButton1Click:Connect(function()
+    if KeyInput.Text == CORRECT_KEY then
+        KeyFrame.Visible = false
+        MainMenu.Visible = true
+        ToggleButton.Visible = true
+    else
+        KeyInput.Text = ""
+        KeyInput.PlaceholderText = "НЕВЕРНЫЙ КЛЮЧ!"
+    end
+end)
+
+ToggleButton.MouseButton1Click:Connect(function()
+    MainMenu.Visible = not MainMenu.Visible
+end)
+
+-- РАБОТА ЦИКЛОВ: ESP, AIMBOT, COMBAT
+task.spawn(function()
+    local localPlayer = game:GetService("Players").LocalPlayer
+    local camera = game:GetService("Workspace").CurrentCamera
+
+    while task.wait(0.1) do
+        for _, plr in pairs(game:GetService("Players"):GetPlayers()) do
+                
