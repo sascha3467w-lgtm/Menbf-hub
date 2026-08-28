@@ -1,5 +1,5 @@
 -- =================================================================
--- СКРИПТ: MbHub VIP Mega | Игра: Blox Fruits (Исправленные кнопки)
+-- СКРИПТ: MbHub VIP Mega Fixed | Игра: Blox Fruits (Все функции)
 -- =================================================================
 
 -- НАСТРОЙКА КЛЮЧА И МГНОВЕННЫЙ АВТО-ХАКИ
@@ -49,7 +49,6 @@ local function FastAttack()
     task.spawn(function()
         while _G.Autofarm or _G.ChestFarm or _G.AutoRaid do
             pcall(function()
-                -- Авто-экипировка (берет боевой стиль или меч)
                 if not LocalPlayer.Character:FindFirstChildOfClass("Tool") then
                     for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
                         if tool:IsA("Tool") and (tool.ToolTip == "Melee" or tool.ToolTip == "Sword" or tool.Name == "Combat") then
@@ -58,14 +57,13 @@ local function FastAttack()
                         end
                     end
                 end
-                -- Сама безумно кликает и наносит урон
                 local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
                 if tool then
                     tool:Activate()
                     game:GetService("ReplicatedStorage").Remotes.Validator:FireServer(math.random(1, 9999))
                 end
             end)
-            task.wait(0.01) -- Бешеная скорость кликов
+            task.wait(0.01)
         end
     end)
 end
@@ -140,8 +138,7 @@ local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
 local ToggleButton = Instance.new("TextButton")
-local TabContainer = Instance.new("Frame")
-local ContentContainer = Instance.new("Frame")
+local ContentScroll = Instance.new("ScrollingFrame")
 local UIListLayout = Instance.new("UIListLayout")
 
 ScreenGui.Name = "MbHubGui"
@@ -183,76 +180,75 @@ UIGradient.Parent = MainFrame
 task.spawn(function() while task.wait(0.03) do UIGradient.Rotation = UIGradient.Rotation + 1 end end)
 
 Title.Parent = MainFrame
-Title.Size = UDim2.new(1, 0, 0, 35)
+Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
-Title.Text = "MbHub"
+Title.Text = "MbHub Premium (Все функции)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 22
 Title.Font = Enum.Font.GothamBold
 
--- ВЕРХНЯЯ ПАНЕЛЬ ДЛЯ КНОПОК ВКЛАДОК
-TabContainer.Parent = MainFrame
-TabContainer.Position = UDim2.new(0, 10, 0, 40)
-TabContainer.Size = UDim2.new(1, -20, 0, 40)
-TabContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-TabContainer.BackgroundTransparency = 0.6
-Instance.new("UICorner").Parent = TabContainer
+-- ЕДИНЫЙ ОКРУЖЕННЫЙ КОНТЕЙНЕР ДЛЯ ВСЕХ ФУНКЦИЙ С ПРОКРУТКОЙ
+ContentScroll.Parent = MainFrame
+ContentScroll.Position = UDim2.new(0, 15, 0, 50)
+ContentScroll.Size = UDim2.new(1, -30, 1, -65)
+ContentScroll.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+ContentScroll.BackgroundTransparency = 0.5
+ContentScroll.CanvasSize = UDim2.new(0, 0, 4, 0) -- Очень длинное поле для прокрутки вниз
+Instance.new("UICorner").Parent = ContentScroll
 
-UIListLayout.Parent = TabContainer
-UIListLayout.FillDirection = Enum.FillDirection.Horizontal
+UIListLayout.Parent = ContentScroll
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 6)
+UIListLayout.Padding = UDim.new(0, 8)
 
--- КОНТЕЙНЕР ДЛЯ СТРАНИЦ
-ContentContainer.Parent = MainFrame
-ContentContainer.Position = UDim2.new(0, 10, 0, 90)
-ContentContainer.Size = UDim2.new(1, -20, 0, 220)
-ContentContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-ContentContainer.BackgroundTransparency = 0.6
-Instance.new("UICorner").Parent = ContentContainer
-
--- ЛОГИКА ВКЛАДОК
-local ActivePages = {}
-local function CreateNewTab(name)
+-- ФУНКЦИЯ ДОБАВЛЕНИЯ КНОПОК
+local function CreateButton(text, color, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 95, 1, 0)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    btn.Text = name
+    btn.Size = UDim2.new(1, -10, 0, 45)
+    btn.Position = UDim2.new(0, 5, 0, 0)
+    btn.BackgroundColor3 = color
+    btn.Text = text
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 13
-    btn.Parent = TabContainer
+    btn.TextSize = 15
+    btn.Parent = ContentScroll
     Instance.new("UICorner").Parent = btn
-
-    local page = Instance.new("ScrollingFrame")
-    page.Size = UDim2.new(1, -10, 1, -10)
-    page.Position = UDim2.new(0, 5, 0, 5)
-    page.BackgroundTransparency = 1
-    page.Visible = false
-    page.Parent = ContentContainer
-    page.CanvasSize = UDim2.new(0, 0, 3, 0)
-    
-    local pList = Instance.new("UIListLayout")
-    pList.Parent = page
-    pList.Padding = UDim.new(0, 6)
-
-    btn.MouseButton1Click:Connect(function()
-        for _, p in pairs(ActivePages) do p.Visible = false end
-        page.Visible = true
-    end)
-    ActivePages[name] = page
-    return page
+    btn.MouseButton1Click:Connect(callback)
+    return btn
 end
 
--- СОЗДАНИЕ СТРАНИЦ
-local FarmPage = CreateNewTab("Фарм")
-local ChestPage = CreateNewTab("Сундуки")
-local ShopPage = CreateNewTab("Магазин")
-local RaidPage = CreateNewTab("Рейды")
-ActivePages["Фарм"].Visible = true
+-- ==========================================
+-- СПИСОК ВСЕХ ФУНКЦИЙ НА ОДНОМ ЭКРАНЕ
+-- ==========================================
 
--- [ВКЛАДКА ФАРМ]
-local fBtn = Instance.new("TextButton")
-fBtn.Size = UDim2.new(1, 0, 0, 45)
-fBtn.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
-fBtn.Text = "Авто-Квест и Атака: ВЫКЛ"
+-- 1. Кнопка Авто-Фарма
+local farmToggle = CreateButton("🔴 Включить Авто-Квест и Авто-Атаку", Color3.fromRGB(120, 30, 30), function()
+    _G.Autofarm = not _G.Autofarm
+    if _G.Autofarm then
+        _G.Autofarm = true
+        FastAttack()
+    end
+end)
+task.spawn(function()
+    while true do
+        task.wait(0.2)
+        if farmToggle and game.CoreGui:FindFirstChild("MbHubGui") then
+            farmToggle.Text = _G.Autofarm and "🟢 Авто-Квест и Авто-Атака: ВКЛ" or "🔴 Включить Авто-Квест и Авто-Атаку"
+            farmToggle.BackgroundColor3 = _G.Autofarm and Color3.fromRGB(30, 120, 30) or Color3.fromRGB(120, 30, 30)
+        end
+    end
+end)
+
+-- 2. Кнопка Авто-Сундуков
+local chestToggle = CreateButton("🔴 Включить Авто-Сбор Сундуков", Color3.fromRGB(120, 30, 30), function()
+    _G.ChestFarm = not _G.ChestFarm
+    if _G.ChestFarm then
+        _G.ChestFarm = true
+        FastAttack()
+    end
+end)
+task.spawn(function()
+    while true do
+        task.wait(0.2)
+        if chestToggle and game.CoreGui:FindFirstChild("MbHubGui") then
+            chestToggle.Text = _G.ChestFarm and "🟢 Авто-Сбор Сундуков: ВКЛ" or "🔴 Включить Авто-Сбор Сундуков"
+                
