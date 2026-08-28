@@ -1,9 +1,9 @@
 local SG = Instance.new("ScreenGui")
 SG.Name = "MenBf_Pr"
 SG.ResetOnSpawn = false
+SG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 SG.Parent = game:GetService("CoreGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
--- ГЛАВНОЕ ОКНО
 local MM = Instance.new("Frame")
 MM.Size = UDim2.new(0, 340, 0, 220)
 MM.Position = UDim2.new(0.5, -170, 0.5, -110)
@@ -18,7 +18,6 @@ task.spawn(function()
     end
 end)
 
--- КНОПКА ПЕРЕКЛЮЧЕНИЯ ОКНА (Слева на экране)
 local Tg = Instance.new("TextButton")
 Tg.Size = UDim2.new(0, 50, 0, 50)
 Tg.Position = UDim2.new(0, 10, 0.4, 0)
@@ -28,23 +27,27 @@ Tg.Active = true Tg.Draggable = true Tg.Parent = SG
 Instance.new("UICorner", Tg).CornerRadius = UDim.new(0.5, 0)
 Tg.MouseButton1Click:Connect(function() MM.Visible = not MM.Visible end)
 
--- КОНТЕЙНЕР ДЛЯ ВКЛАДОК (Справа от кнопок навигации)
 local C_F = Instance.new("Frame") 
-C_F.Size = UDim2.new(1, -95, 1, -10) 
-C_F.Position = UDim2.new(0, 90, 0, 5) 
+C_F.Size = UDim2.new(0, 230, 0, 200) 
+C_F.Position = UDim2.new(0, 95, 0, 10) 
 C_F.BackgroundTransparency = 1 
+C_F.ZIndex = 2
 C_F.Parent = MM
 
 local T1 = Instance.new("Frame") T1.Size = UDim2.new(1,0,1,0) T1.BackgroundTransparency = 1 T1.Visible = true T1.Parent = C_F
 local T2 = Instance.new("Frame") T2.Size = UDim2.new(1,0,1,0) T2.BackgroundTransparency = 1 T2.Visible = false T2.Parent = C_F
 local T3 = Instance.new("Frame") T3.Size = UDim2.new(1,0,1,0) T3.BackgroundTransparency = 1 T3.Visible = false T3.Parent = C_F
 
--- ФУНКЦИЯ СОЗДАНИЯ КНОПОК НАВИГАЦИИ (Слева в окне)
 local function AddT(txt, y, f)
     local b = Instance.new("TextButton")
-    b.Size = UDim2.new(0, 75, 0, 30)
-    b.Position = UDim2.new(0, 5, 0, y)
-    b.Text = txt b.Parent = MM
+    b.Size = UDim2.new(0, 80, 0, 30)
+    b.Position = UDim2.new(0, 8, 0, y)
+    b.Text = txt 
+    b.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    b.TextColor3 = Color3.fromRGB(255, 255, 255)
+    b.ZIndex = 3
+    b.Parent = MM
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
     b.MouseButton1Click:Connect(function() 
         T1.Visible = false T2.Visible = false T3.Visible = false 
         f.Visible = true 
@@ -56,15 +59,16 @@ _G.AP = false _G.AS = false _G.AM = false
 _G.EP = false _G.ES = false _G.EM = false
 _G.KA = false _G.GG = false _G.FS = false _G.FM = false
 
--- ФУНКЦИЯ СОЗДАНИЯ ТУМБЛЕРОВ ФУНКЦИЙ
 local function CreateBtn(txt, y, p, gv)
     local b = Instance.new("TextButton")
-    b.Size = UDim2.new(0.95, 0, 0, 28)
+    b.Size = UDim2.new(1, 0, 0, 28)
     b.Position = UDim2.new(0, 0, 0, y)
     b.Text = txt .. " [OFF]"
     b.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
     b.TextColor3 = Color3.fromRGB(255, 255, 255)
+    b.ZIndex = 4
     b.Parent = p
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
     b.MouseButton1Click:Connect(function()
         _G[gv] = not _G[gv]
         b.Text = txt .. (_G[gv] and " [ON]" or " [OFF]")
@@ -73,19 +77,18 @@ local function CreateBtn(txt, y, p, gv)
 end
 
 CreateBtn("KillAura", 5, T1, "KA")
-CreateBtn("Auto Grab Gun", 35, T1, "GG")
-CreateBtn("Fling Sheriff", 65, T1, "FS")
-CreateBtn("Fling Murder", 95, T1, "FM")
+CreateBtn("Auto Grab Gun", 38, T1, "GG")
+CreateBtn("Fling Sheriff", 71, T1, "FS")
+CreateBtn("Fling Murder", 104, T1, "FM")
 
 CreateBtn("ESP Players", 5, T2, "EP")
-CreateBtn("ESP Sheriff", 35, T2, "ES")
-CreateBtn("ESP Murder", 65, T2, "EM")
+CreateBtn("ESP Sheriff", 38, T2, "ES")
+CreateBtn("ESP Murder", 71, T2, "EM")
 
 CreateBtn("Aim Players", 5, T3, "AP")
-CreateBtn("Aim Sheriff", 35, T3, "AS")
-CreateBtn("Aim Murder", 65, T3, "AM")
+CreateBtn("Aim Sheriff", 38, T3, "AS")
+CreateBtn("Aim Murder", 71, T3, "AM")
 
--- МГНОВЕННЫЙ НЕВИДИМЫЙ ФЛИНГ
 local function FastGhostFling(targetHrp)
     local lp = game:GetService("Players").LocalPlayer
     local myChar = lp.Character
@@ -113,7 +116,6 @@ local function FastGhostFling(targetHrp)
     myHrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
 end
 
--- ЦИКЛ ХАКОВ
 task.spawn(function()
     local lp = game:GetService("Players").LocalPlayer
     local cam = game:GetService("Workspace").CurrentCamera
@@ -133,7 +135,6 @@ task.spawn(function()
                 local isM = p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife")
                 local isS = p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun")
                 
-                -- HIGHLIGHT ESP
                 local currentHighlight = p.Character:FindFirstChild("MenESP")
                 if _G.EP or (_G.ES and isS) or (_G.EM and isM) then
                     if not currentHighlight then
@@ -147,12 +148,10 @@ task.spawn(function()
                     if currentHighlight then currentHighlight:Destroy() end
                 end
 
-                -- AIMBOT
                 if _G.AP or (_G.AS and isS) or (_G.AM and isM) then
                     cam.CFrame = CFrame.new(cam.CFrame.Position, hrp.Position)
                 end
 
-                -- KILL AURA
                 if _G.KA and (lp.Character:FindFirstChild("Knife") or lp.Backpack:FindFirstChild("Knife")) and not isM then
                     local knife = lp.Character:FindFirstChild("Knife") or lp.Backpack:FindFirstChild("Knife")
                     if (lp.Character.HumanoidRootPart.Position - hrp.Position).Magnitude < 22 then
@@ -160,7 +159,6 @@ task.spawn(function()
                     end
                 end
 
-                -- ФЛИНГ
                 if (_G.FS and isS) or (_G.FM and isM) then
                     FastGhostFling(hrp)
                 end
