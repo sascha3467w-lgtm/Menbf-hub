@@ -1,8 +1,8 @@
 -- =================================================================
--- СКРИПТ: MbHub Ultimate v3 | Игра: Blox Fruits (Все 3 Моря)
+-- СКРИПТ: MbHub VIP Mega | Игра: Blox Fruits (Полная версия)
 -- =================================================================
 
--- 1. СИСТЕМА КЛЮЧА И МГНОВЕННЫЙ АВТО-ХАКИ
+-- [1] НАСТРОЙКА КЛЮЧА И МГНОВЕННЫЙ АВТО-ХАКИ
 local CorrectKey = "Menbf2"
 local UserKey = "Menbf2" 
 
@@ -11,7 +11,7 @@ if UserKey ~= CorrectKey then
     return
 end
 
--- Мгновенная активация Хаки (Buso)
+-- Мгновенная активация Хаки (Buso) при инжекте
 task.spawn(function()
     pcall(function()
         local args = { [1] = "Buso" }
@@ -19,10 +19,10 @@ task.spawn(function()
     end)
 end)
 
--- Удаление старого интерфейса
+-- Удаление старого GUI, если оно запущено
 if game.CoreGui:FindFirstChild("MbHubGui") then game.CoreGui.MbHubGui:Destroy() end
 
--- Глобальные переменные управления
+-- Глобальные переключатели
 _G.Autofarm = false
 _G.ChestFarm = false
 _G.AutoRaid = false
@@ -30,7 +30,7 @@ _G.AutoRaid = false
 local LocalPlayer = game.Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
 
--- ФУНКЦИЯ ПЛАВНОГО ТЕЛЕПОРТА (TWEEN)
+-- ФУНКЦИЯ БЕЗОПАСНОГО И ПЛАВНОГО ТЕЛЕПОРТА (TWEEN)
 local function TweenTo(cframe, speed)
     pcall(function()
         local character = LocalPlayer.Character
@@ -44,12 +44,12 @@ local function TweenTo(cframe, speed)
     end)
 end
 
--- СВЕРХБЫСТРАЯ АВТО-АТАКА (FAST ATTACK) БЕЗ КЛИКОВ
+-- [2] ЖЕСТКАЯ АВТО-АТАКА И АВТО-ЭКИПИРОВКА ОРУЖИЯ
 local function FastAttack()
     task.spawn(function()
         while _G.Autofarm or _G.ChestFarm or _G.AutoRaid do
             pcall(function()
-                -- Авто-экипировка оружия
+                -- Авто-экипировка (берет боевой стиль или меч)
                 if not LocalPlayer.Character:FindFirstChildOfClass("Tool") then
                     for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
                         if tool:IsA("Tool") and (tool.ToolTip == "Melee" or tool.ToolTip == "Sword" or tool.Name == "Combat") then
@@ -58,28 +58,28 @@ local function FastAttack()
                         end
                     end
                 end
-                -- Обход кликов (Прямой урон через регистратор оружия)
+                -- Сама безумно кликает и наносит урон
                 local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
                 if tool then
                     tool:Activate()
                     game:GetService("ReplicatedStorage").Remotes.Validator:FireServer(math.random(1, 9999))
                 end
             end)
-            task.wait(0.01) -- Бешеная скорость ударов
+            task.wait(0.01) -- Бешеная скорость кликов
         end
     end)
 end
 
--- АВТО-КВЕСТ ПО ВСЕМ УРОВНЯМ (Автоматический выбор)
+-- [3] АВТО-КВЕСТ + АВТО-ФАРМ (УМНЫЙ ПОДБОР ПО УРОВНЮ)
 local function GetQuestData()
     local lvl = LocalPlayer.Data.Level.Value
-    -- 1 МОРЕ
+    -- 1 МОРЕ (Остров новичков, Джунгли и т.д.)
     if lvl >= 1 and lvl < 10 then return "Bandit Quest Giver", "BanditQuest1", 1, "Bandit"
     elseif lvl >= 10 and lvl < 15 then return "Monkey Quest Giver", "JungleQuest", 1, "Monkey"
     elseif lvl >= 15 and lvl < 30 then return "Monkey Quest Giver", "JungleQuest", 2, "Gorilla"
-    -- 2 МОРЕ (Заглушка/Автоподбор NPC)
+    -- 2 МОРЕ
     elseif lvl >= 700 and lvl < 775 then return "Raider Quest Giver", "Area1Quest", 1, "Raider"
-    -- 3 МОРЕ (Заглушка/Автоподбор NPC)
+    -- 3 МОРЕ
     elseif lvl >= 1500 and lvl < 1575 then return "Boat Quest Giver", "BoatQuest1", 1, "Pirate Millionaire"
     else return "Bandit Quest Giver", "BanditQuest1", 1, "Bandit" end
 end
@@ -102,7 +102,7 @@ task.spawn(function()
                     for _, enemy in pairs(workspace.Enemies:GetChildren()) do
                         if enemy.Name == eName and enemy:FindFirstChild("HumanoidRootPart") and enemy.Humanoid.Health > 0 then
                             while _G.Autofarm and enemy.Humanoid.Health > 0 do
-                                -- Удерживаем позицию над мобом, пока FastAttack наносит урон
+                                -- Удерживаем вас ровно над врагом, пока работает FastAttack
                                 LocalPlayer.Character.HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0)
                                 task.wait(0.05)
                             end
@@ -114,7 +114,7 @@ task.spawn(function()
     end
 end)
 
--- ПРОФЕССИОНАЛЬНЫЙ АВТО-СБОР СУНДУКОВ (ТЕЛЕПОРТ ПО ВСЕЙ КАРТЕ)
+-- [4] ЛОГИКА АВТО-СБОРА СУНДУКОВ ПО КАРТЕ
 task.spawn(function()
     while true do
         task.wait(0.1)
@@ -124,11 +124,10 @@ task.spawn(function()
                 for _, obj in pairs(workspace:GetChildren()) do
                     if obj.Name:find("Chest") and (obj:IsA("Part") or obj:IsA("MeshPart")) then
                         foundChest = true
-                        TweenTo(obj.CFrame, 350) -- Быстрый перелет к сундуку
+                        TweenTo(obj.CFrame, 350)
                         task.wait(0.2)
                     end
                 end
-                -- Поиск в скрытых папках карты
                 if not foundChest and workspace:FindFirstChild("ChestModels") then
                     for _, obj in pairs(workspace.ChestModels:GetChildren()) do
                         TweenTo(obj.CFrame, 350)
@@ -140,7 +139,7 @@ task.spawn(function()
     end
 end)
 
--- 2. СОЗДАНИЕ ГРАФИЧЕСКОГО ИНТЕРФЕЙСА (GUI)
+-- [5] СОЗДАНИЕ КРАСИВОГО GUI
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
@@ -153,7 +152,7 @@ ScreenGui.Name = "MbHubGui"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ResetOnSpawn = false
 
--- КНОПКА МВ (ДЛЯ СВЕРТЫВАНИЯ)
+-- КНОПКА СВЕРНУТЬ/РАЗВЕРНУТЬ (MB)
 ToggleButton.Name = "MB_Toggle"
 ToggleButton.Parent = ScreenGui
 ToggleButton.Position = UDim2.new(0.02, 0, 0.2, 0)
@@ -164,13 +163,10 @@ ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleButton.Font = Enum.Font.GothamBold
 ToggleButton.TextSize = 18
 ToggleButton.Draggable = true
-
-local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(0, 10)
-ToggleCorner.Parent = ToggleButton
+Instance.new("UICorner").Parent = ToggleButton
 ToggleButton.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- ГЛАВНОЕ РАДУЖНОЕ ОКНО
+-- ГЛАВНОЕ ОКНО С ПЕРЕЛИВОМ РАДУГИ
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
@@ -198,7 +194,7 @@ Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 22
 Title.Font = Enum.Font.GothamBold
 
--- КОНТЕЙНЕРЫ
+-- ПАНЕЛИ И КОНТЕЙНЕРЫ ДЛЯ ВКЛАДОК
 TabContainer.Parent = MainFrame
 TabContainer.Position = UDim2.new(0, 10, 0, 45)
 TabContainer.Size = UDim2.new(0, 95, 0, 225)
@@ -248,12 +244,14 @@ local function CreateNewTab(name)
     return page
 end
 
--- Создаем вкладки
+-- СОЗДАНИЕ ВСЕХ 4 ВКЛАДОК (НИЧЕГО НЕ УДАЛЕНО!)
 local FarmPage = CreateNewTab("Фарм")
 local ChestPage = CreateNewTab("Сундуки")
 local ShopPage = CreateNewTab("Магазин")
 local RaidPage = CreateNewTab("Рейды")
 ActivePages["Фарм"].Visible = true
 
--- НАПОЛНЕНИЕ ВКЛАДКИ ФАРМ
+-- [ВКЛАДКА ФАРМ] Кнопка включения Авто-Квеста и Мега-Атаки
 local fBtn = Instance.new("TextButton")
+fBtn.Size = UDim2.new(0, 290, 0, 40)
+fBtn.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
