@@ -1,7 +1,7 @@
 -- ====================================================================
 -- НАСТРОЙКИ БЕЗОПАСНОСТИ И ДОСТУПА
 -- ====================================================================
-local CorrectKey = "Men9" -- Ваш секретный ключ
+local CorrectKey = "Men9"
 local Player = game:GetService("Players").LocalPlayer
 
 -- ====================================================================
@@ -25,8 +25,8 @@ KeyTab:AddTextbox({
                 Time = 3
             })
             task.wait(1)
-            KeyWindow:Destroy() -- Закрываем окно ключа
-            InitMainScript()    -- Запускаем основное меню
+            KeyWindow:Destroy()
+            InitMainScript()
         else
             OrionLib:MakeNotification({
                 Name = "Ошибка!",
@@ -47,7 +47,8 @@ function InitMainScript()
 
     _G.AutoRaceV2 = false
     _G.AutoRaceV3 = false
-      -- ЛОГИКА АВТО РАСЫ В2
+
+    -- ЛОГИКА АВТО РАСЫ В2
     RaceTab:AddToggle({
         Name = "Авто Выполнение Расы V2",
         Default = false,
