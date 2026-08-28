@@ -5,15 +5,19 @@
 
 local CORRECT_KEY = "Men1"
 
--- Основа интерфейса
+-- Создаем основу для GUI (через CoreGui)
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "MenBf_MM2_Gui"
 ScreenGui.Parent = game:GetService("CoreGui")
 ScreenGui.ResetOnSpawn = false
 
 -- Глобальные переменные настроек
-_G.AimbotPlayers = false _G.AimbotSheriff = false _G.AimbotMurder = false
-_G.EspPlayers = false _G.EspSheriff = false _G.EspMurder = false
+_G.AimbotPlayers = false 
+_G.AimbotSheriff = false 
+_G.AimbotMurder = false
+_G.EspPlayers = false 
+_G.EspSheriff = false 
+_G.EspMurder = false
 _G.KillAura = false
 
 -- Функция для определения ролей в MM2
@@ -78,11 +82,9 @@ local ToggleCorner = Instance.new("UICorner")
 ToggleCorner.CornerRadius = UDim.new(0.5, 0)
 ToggleCorner.Parent = ToggleButton
 
--- Радужная обводка для плавающей кнопки
 local ToggleStroke = Instance.new("UIStroke")
 ToggleStroke.Thickness = 3
 ToggleStroke.Parent = ToggleButton
-
 -- ====================================================================
 -- 3. ГЛАВНОЕ ОКНО С РАДУЖНОЙ ОБВОДКОЙ
 -- ====================================================================
@@ -95,7 +97,6 @@ MainMenu.Active = true
 MainMenu.Draggable = true
 MainMenu.Parent = ScreenGui
 
--- Радужная обводка меню
 local MenuStroke = Instance.new("UIStroke")
 MenuStroke.Thickness = 4
 MenuStroke.Parent = MainMenu
@@ -137,7 +138,7 @@ ContentFrame.Position = UDim2.new(0, 115, 0, 40)
 ContentFrame.BackgroundTransparency = 1
 ContentFrame.Parent = MainMenu
 
-local TabCombat = Instance.new("Frame") TabCombat.Size = UDim2.new(1,0,1,0) TabCombat.BackgroundTransparency = 1 task.nest = 1 TabCombat.Parent = ContentFrame
+local TabCombat = Instance.new("Frame") TabCombat.Size = UDim2.new(1,0,1,0) TabCombat.BackgroundTransparency = 1 TabCombat.Parent = ContentFrame
 local TabEsp = Instance.new("Frame") TabEsp.Size = UDim2.new(1,0,1,0) TabEsp.BackgroundTransparency = 1 TabEsp.Visible = false TabEsp.Parent = ContentFrame
 local TabAimbot = Instance.new("Frame") TabAimbot.Size = UDim2.new(1,0,1,0) TabAimbot.BackgroundTransparency = 1 TabAimbot.Visible = false TabAimbot.Parent = ContentFrame
 
@@ -151,7 +152,7 @@ BtnCombat.MouseButton1Click:Connect(function() TabCombat.Visible = true TabEsp.V
 BtnEsp.MouseButton1Click:Connect(function() TabCombat.Visible = false TabEsp.Visible = true TabAimbot.Visible = false BtnCombat.BackgroundColor3 = Color3.fromRGB(30,30,30) BtnEsp.BackgroundColor3 = Color3.fromRGB(40,40,40) BtnAimbot.BackgroundColor3 = Color3.fromRGB(30,30,30) end)
 BtnAimbot.MouseButton1Click:Connect(function() TabCombat.Visible = false TabEsp.Visible = false TabAimbot.Visible = true BtnCombat.BackgroundColor3 = Color3.fromRGB(30,30,30) BtnEsp.BackgroundColor3 = Color3.fromRGB(30,30,30) BtnAimbot.BackgroundColor3 = Color3.fromRGB(40,40,40) end)
 
--- Функция создания красивых переключателей (Toggle ToggleButton)
+-- Функция создания красивых переключателей
 local function CreateToggle(name, text, pos, parent, globalVar)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.95, 0, 0, 35)
@@ -177,25 +178,21 @@ end
 -- ====================================================================
 -- НАПОЛНЕНИЕ ВКЛАДОК (КНОПКИ ВКЛ/ВЫКЛ)
 -- ====================================================================
-
--- 1 Вкладка: Combat
 CreateToggle("KillAura", "KillAura (Радиус атаки)", UDim2.new(0, 0, 0.05, 0), TabCombat, "KillAura")
 
--- 2 Вкладка: ESP
 CreateToggle("EspPlr", "ESP Players (Игроки)", UDim2.new(0, 0, 0.05, 0), TabEsp, "EspPlayers")
 CreateToggle("EspShr", "ESP Sheriff (Шериф)", UDim2.new(0, 0, 0.25, 0), TabEsp, "EspSheriff")
 CreateToggle("EspMrd", "ESP Murder (Убийца)", UDim2.new(0, 0, 0.45, 0), TabEsp, "EspMurder")
 
--- 3 Вкладка: AimBot
 CreateToggle("AimPlr", "AimBot Players (Игроки)", UDim2.new(0, 0, 0.05, 0), TabAimbot, "AimbotPlayers")
 CreateToggle("AimShr", "AimBot Sheriff (Шериф)", UDim2.new(0, 0, 0.25, 0), TabAimbot, "AimbotSheriff")
 CreateToggle("AimMrd", "AimBot Murder (Убийца)", UDim2.new(0, 0, 0.45, 0), TabAimbot, "AimbotMurder")
 
 -- ====================================================================
--- ФУНКЦИОНАЛЬНАЯ ЛОГИКА СНАЙПЕРСТВА, ЕСП И АУРЫ
+-- ФУНКЦИОНАЛЬНАЯ ЛОГИКА
 -- ====================================================================
 
--- Проверка ключа Men1
+-- Проверка ключа
 KeyButton.MouseButton1Click:Connect(function()
     if KeyInput.Text == CORRECT_KEY then
         KeyFrame.Visible = false
@@ -218,4 +215,50 @@ task.spawn(function()
 
     while task.wait(0.1) do
         for _, plr in pairs(game:GetService("Players"):GetPlayers()) do
+            if plr ~= localPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                local role = GetPlayerRole(plr)
+                local hrp = plr.Character.HumanoidRootPart
                 
+                -- Логика ESP
+                local hasHighlight = hrp:FindFirstChild("MenBf_ESP")
+                local shouldEsp = (_G.EspPlayers) or (_G.EspSheriff and role == "Sheriff") or (_G.EspMurder and role == "Murder")
+                
+                if shouldEsp then
+                    if not hasHighlight then
+                        local box = Instance.new("BoxHandleAdornment")
+                        box.Name = "MenBf_ESP"
+                        box.Size = plr.Character:GetExtentsSize()
+                        box.AlwaysOnTop = true
+                        box.ZIndex = 5
+                        box.Adornee = hrp
+                        box.Transparency = 0.4
+                        box.Parent = hrp
+                        
+                        if role == "Murder" then box.Color3 = Color3.fromRGB(255, 0, 0)
+                        elseif role == "Sheriff" then box.Color3 = Color3.fromRGB(0, 0, 255)
+                        else box.Color3 = Color3.fromRGB(0, 255, 0) end
+                    end
+                else
+                    if hasHighlight then hasHighlight:Destroy() end
+                end
+
+                -- Логика AIMBOT
+                local shouldAim = (_G.AimbotPlayers) or (_G.AimbotSheriff and role == "Sheriff") or (_G.AimbotMurder and role == "Murder")
+                if shouldAim and localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local dist = (localPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude
+                    if dist < 120 then
+                        camera.CFrame = CFrame.new(camera.CFrame.Position, hrp.Position)
+                    end
+                end
+
+                -- Логика COMBAT
+                if _G.KillAura and role == "Murder" then
+                    if localPlayer.Character:FindFirstChild("Knife") and (localPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude < 25 then
+                        localPlayer.Character.Knife:Activate()
+                    end
+                end
+
+            end
+        end
+    end
+end)
