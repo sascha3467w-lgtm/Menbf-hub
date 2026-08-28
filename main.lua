@@ -1,35 +1,159 @@
 -- =================================================================
--- Скрипт: MbHub | Игра: Blox Fruits
+-- ОБНОВЛЕННЫЙ СКРИПТ: MbHub | Игра: Blox Fruits (Авто-Квесты)
 -- =================================================================
 
 -- 1. СИСТЕМА КЛЮЧА
 local CorrectKey = "MenBf2"
-local UserKey = "MenBf2" -- Delta X автоматически активирует, если ключ совпадает
+local UserKey = "MenBf2"
 
 if UserKey ~= CorrectKey then
     game.Players.LocalPlayer:Kick("Неверный ключ для MbHub!")
     return
 end
 
--- 2. СОЗДАНИЕ ГРАФИЧЕСКОГО ИНТЕРФЕЙСА (GUI)
+-- Удаление старой копии GUI
+if game.CoreGui:FindFirstChild("MbHubGui") then
+    game.CoreGui.MbHubGui:Destroy()
+end
+
+-- Переменные
+_G.Autofarm = false
+local LocalPlayer = game.Players.LocalPlayer
+
+-- Вспомогательная функция автоматической экипировки оружия
+local function EquipWeapon()
+    pcall(function()
+        if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChildOfClass("Tool") then
+            -- Ищет стиль боя или меч в инвентаре и берет в руки
+            for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
+                if tool:IsA("Tool") and (tool.ToolTip == "Melee" or tool.ToolTip == "Sword" or tool.Name == "Combat") then
+                    LocalPlayer.Character.Humanoid:EquipTool(tool)
+                    break
+                end
+            end
+        end
+    end)
+end
+
+-- Функция имитации кликов / авто-атаки
+local function AutoAttack()
+    task.spawn(function()
+        while _G.Autofarm do
+            pcall(function()
+                EquipWeapon() -- Автоматом берем оружие в руку
+                local VirtualUser = game:GetService("VirtualUser")
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton1(Vector2.new(851, 529))
+            end)
+            task.wait(0.1)
+        end
+    end)
+end
+
+-- Функция определения текущего квеста в зависимости от уровня (Первый мир)
+local function GetQuestData()
+    local Level = LocalPlayer.Data.Level.Value
+    local QuestNPC, QuestName, QuestID, EnemyName
+    
+    if Level >= 1 and Level < 10 then
+        QuestNPC = "Bandit Quest Giver"
+        QuestName = "BanditQuest1"
+        QuestID = 1
+        EnemyName = "Bandit"
+    elseif Level >= 10 and Level < 15 then
+        QuestNPC = "Monkey Quest Giver"
+        QuestName = "JungleQuest"
+        QuestID = 1
+        EnemyName = "Monkey"
+    elseif Level >= 15 and Level < 30 then
+        QuestNPC = "Monkey Quest Giver"
+        QuestName = "JungleQuest"
+        QuestID = 2
+        EnemyName = "Gorilla"
+    else
+        -- Заглушка, если уровень выше стартовых островов
+        QuestNPC = "Bandit Quest Giver"
+        QuestName = "BanditQuest1"
+        QuestID = 1
+        EnemyName = "Bandit"
+    end
+    return QuestNPC, QuestName, QuestID, EnemyName
+end
+
+-- Главная функция проверки и взятия квеста
+local function CheckAndTakeQuest(questNPC, questName, questID)
+    local hasQuest = LocalPlayer.PlayerGui.Main:FindFirstChild("Quest") and LocalPlayer.PlayerGui.Main.Quest.Visible
+    if not hasQuest then
+        -- Телепорт к квест-гиверу
+        local npc = workspace.NPCs:FindFirstChild(questNPC) or workspace.NPCs:FindFirstChild(questNPC, true)
+        if npc and npc:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3)
+            task.wait(0.5)
+            -- Отправка сигнала серверу о взятии квеста
+            local args = { [1] = "StartQuest", [2] = questName, [3] = questID }
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
+        end
+    end
+end
+
+-- Поиск врагов по имени из квеста
+local function GetTargetEnemy(enemyName)
+    local Nearest = nil
+    local MinDistance = math.huge
+    if workspace:FindFirstChild("Enemies") then
+        for _, npc in pairs(workspace.Enemies:GetChildren()) do
+            if npc.Name == enemyName and npc:FindFirstChild("HumanoidRootPart") and npc:FindFirstChild("Humanoid") and npc.Humanoid.Health > 0 then
+                local Distance = (LocalPlayer.Character.HumanoidRootPart.Position - npc.HumanoidRootPart.Position).Magnitude
+                if Distance < MinDistance then
+                    MinDistance = Distance
+                    Nearest = npc
+                end
+            end
+        end
+    end
+    return Nearest
+end
+
+-- Основной цикл фарма и квестов
+task.spawn(function()
+    while true do
+        task.wait(0.3)
+        if _G.Autofarm then
+            pcall(function()
+                local qNPC, qName, qID, eName = GetQuestData()
+                
+                -- Проверяем квест: если его нет — берем
+                local hasQuest = LocalPlayer.PlayerGui.Main:FindFirstChild("Quest") and LocalPlayer.PlayerGui.Main.Quest.Visible
+                if not hasQuest then
+                    CheckAndTakeQuest(qNPC, qName, qID)
+                else
+                    -- Если квест есть, летим убивать нужных мобов
+                    local Target = GetTargetEnemy(eName)
+                    if Target then
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = Target.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0)
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- 2. ГРАФИЧЕСКИЙ ИНТЕРФЕЙС (GUI)
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
-local TabButtons = Instance.new("Frame")
-local Container = Instance.new("Frame")
-local UIListLayout = Instance.new("UIListLayout")
-local UIGradient = Instance.new("UIGradient")
-local ToggleButton = Instance.new("TextButton") -- Окошко для откр/закр
+local ToggleButton = Instance.new("TextButton")
+local FarmButton = Instance.new("TextButton")
+local TeleportButton = Instance.new("TextButton")
 
--- Настройка ScreenGui
 ScreenGui.Name = "MbHubGui"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ResetOnSpawn = false
 
--- НАСТРОЙКА МИНИ-ОКОШКА (КНОПКА ОТКРЫТИЯ/ЗАКРЫТИЯ)
+-- КНОПКА МВ (СВЕРНУТЬ/РАЗВЕРНУТЬ)
 ToggleButton.Name = "MB_Toggle"
 ToggleButton.Parent = ScreenGui
-ToggleButton.Position = UDim2.new(0.05, 0, 0.15, 0)
+ToggleButton.Position = UDim2.new(0.05, 0, 0.2, 0)
 ToggleButton.Size = UDim2.new(0, 50, 0, 50)
 ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 ToggleButton.Text = "MB"
@@ -37,23 +161,21 @@ ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleButton.TextSize = 18
 ToggleButton.Font = Enum.Font.SourceSansBold
 ToggleButton.Active = true
-ToggleButton.Draggable = true -- Можно перетаскивать по экрану
+ToggleButton.Draggable = true
 
--- Скругление для кнопки
 local ToggleCorner = Instance.new("UICorner")
 ToggleCorner.CornerRadius = UDim.new(0, 10)
 ToggleCorner.Parent = ToggleButton
 
--- Логика кнопки MB (Открыть/Закрыть)
 ToggleButton.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
--- НАСТРОЙКА ГЛАВНОГО МЕНЮ
+-- ОКНО МЕНЮ (РАДУЖНОЕ)
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
-MainFrame.Size = UDim2.new(0, 450, 0, 300)
+MainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
+MainFrame.Size = UDim2.new(0, 300, 0, 200)
 MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 MainFrame.Active = true
 MainFrame.Draggable = true
@@ -62,210 +184,75 @@ local FrameCorner = Instance.new("UICorner")
 FrameCorner.CornerRadius = UDim.new(0, 12)
 FrameCorner.Parent = MainFrame
 
--- РАДУЖНОЕ МЕНЮ (UIGradient)
+local UIGradient = Instance.new("UIGradient")
 UIGradient.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
-    ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255, 255, 0)),
-    ColorSequenceKeypoint.new(0.4, Color3.fromRGB(0, 255, 0)),
-    ColorSequenceKeypoint.new(0.6, Color3.fromRGB(0, 255, 255)),
-    ColorSequenceKeypoint.new(0.8, Color3.fromRGB(0, 0, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 255))
+    ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 255, 0)),
+    ColorSequenceKeypoint.new(0.7, Color3.fromRGB(0, 0, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
 })
 UIGradient.Parent = MainFrame
 
--- Анимация перелива радуги
 task.spawn(function()
     while task.wait(0.03) do
-        UIGradient.Rotation = UIGradient.Rotation + 1
+        UIGradient.Rotation = UIGradient.Rotation + 2
     end
 end)
 
--- НАЗВАНИЕ ВНУТРИ МЕНЮ (MbHub)
 Title.Name = "Title"
 Title.Parent = MainFrame
-Title.Position = UDim2.new(0, 0, 0, 5)
+Title.Position = UDim2.new(0, 0, 0, 10)
 Title.Size = UDim2.new(1, 0, 0, 30)
 Title.BackgroundTransparency = 1
 Title.Text = "MbHub"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 22
+Title.TextSize = 24
 Title.Font = Enum.Font.GothamBold
 
--- ПАНЕЛЬ ВКЛАДОК
-TabButtons.Name = "TabButtons"
-TabButtons.Parent = MainFrame
-TabButtons.Position = UDim2.new(0, 10, 0, 40)
-TabButtons.Size = UDim2.new(0, 100, 0, 240)
-TabButtons.BackgroundTransparency = 0.5
-TabButtons.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+-- КНОПКА «АВТО-КВЕСТ + ФАРМ»
+FarmButton.Name = "FarmButton"
+FarmButton.Parent = MainFrame
+FarmButton.Position = UDim2.new(0.1, 0, 0.3, 0)
+FarmButton.Size = UDim2.new(0, 240, 0, 40)
+FarmButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+FarmButton.Text = "Авто-Квест & Фарм: ВЫКЛ"
+FarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FarmButton.TextSize = 14
+FarmButton.Font = Enum.Font.GothamBold
 
-local TabCorner = Instance.new("UICorner")
-TabCorner.CornerRadius = UDim.new(0, 8)
-TabCorner.Parent = TabButtons
+local ButtonCorner1 = Instance.new("UICorner")
+ButtonCorner1.CornerRadius = UDim.new(0, 6)
+ButtonCorner1.Parent = FarmButton
 
-UIListLayout.Parent = TabButtons
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 5)
-
--- ОСНОВНОЙ КОНТЕЙНЕР ДЛЯ ФУНКЦИЙ
-Container.Name = "Container"
-Container.Parent = MainFrame
-Container.Position = UDim2.new(0, 120, 0, 40)
-Container.Size = UDim2.new(0, 320, 0, 240)
-Container.BackgroundTransparency = 0.5
-Container.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-
-local ContainerCorner = Instance.new("UICorner")
-ContainerCorner.CornerRadius = UDim.new(0, 8)
-ContainerCorner.Parent = Container
-
--- 3. ПЕРЕМЕННЫЕ ДЛЯ ФУНКЦИЙ СНКРИПТА
-_G.Autofarm = false
-local LocalPlayer = game.Players.LocalPlayer
-
--- Функция авто-атаки (нажатие кликов мыши / ударов оружия)
-local function AutoAttack()
-    task.spawn(function()
-        while _G.Autofarm do
-            local VirtualUser = game:GetService("VirtualUser")
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton1(Vector2.new(851, 529)) -- Эмуляция клика по экрану
-            task.wait(0.1)
-        end
-    end)
-end
-
--- Функция поиска ближайшего NPC для авто-фарма
-local function GetNearestNPC()
-    local Nearest = nil
-    local MinDistance = math.huge
-    for _, npc in pairs(workspace.Enemies:GetChildren()) do
-        if npc:FindFirstChild("HumanoidRootPart") and npc:FindFirstChild("Humanoid") and npc.Humanoid.Health > 0 then
-            local Distance = (LocalPlayer.Character.HumanoidRootPart.Position - npc.HumanoidRootPart.Position).Magnitude
-            if Distance < MinDistance then
-                MinDistance = Distance
-                Nearest = npc
-            end
-        end
-    end
-    return Nearest
-end
-
--- Основной цикл авто-фарма
-task.spawn(function()
-    while true do
-        task.wait(0.5)
-        if _G.Autofarm then
-            pcall(function()
-                local Target = GetNearestNPC()
-                if Target then
-                    -- Телепортация к врагу сверху, чтобы он вас не бил
-                    LocalPlayer.Character.HumanoidRootPart.CFrame = Target.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0)
-                end
-            end)
-        end
-    end
-end)
-
--- 4. СОЗДАНИЕ СТРАНИЦ И КНОПОК
-local Pages = {}
-
-local function CreateTab(name)
-    -- Кнопка вкладки
-    local TabBtn = Instance.new("TextButton")
-    TabBtn.Size = UDim2.new(1, 0, 0, 35)
-    TabBtn.BackgroundTransparency = 1
-    TabBtn.Text = name
-    TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TabBtn.TextSize = 14
-    TabBtn.Font = Enum.Font.Gotham
-    TabBtn.Parent = TabButtons
-    
-    -- Страница контента
-    local Page = Instance.new("ScrollingFrame")
-    Page.Size = UDim2.new(1, 0, 1, 0)
-    Page.BackgroundTransparency = 1
-    Page.Visible = false
-    Page.Parent = Container
-    Page.CanvasSize = UDim2.new(0, 0, 2, 0)
-    
-    local PageList = Instance.new("UIListLayout")
-    PageList.Parent = Page
-    PageList.Padding = UDim.new(0, 5)
-    
-    TabBtn.MouseButton1Click:Connect(function()
-        for _, p in pairs(Pages) do p.Visible = false end
-        Page.Visible = true
-    end)
-    
-    Pages[name] = Page
-    return Page
-end
-
--- Создаем 3 вкладки
-local MainTab = CreateTab("Фарм")
-local RaidTab = CreateTab("Рейды")
-local MiscTab = CreateTab("Разное")
-
--- Делаем первую вкладку видимой по умолчанию
-Pages["Фарм"].Visible = true
-
--- ДОБАВЛЕНИЕ ФУНКЦИЙ НА ВКЛАДКУ «ФАРМ»
--- Переключатель Авто-Фарм + Авто-Атака
-local FarmToggle = Instance.new("TextButton")
-FarmToggle.Size = UDim2.new(0, 300, 0, 40)
-FarmToggle.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
-FarmToggle.Text = "Авто-Фарм & Атака: ВЫКЛ"
-FarmToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-FarmToggle.Font = Enum.Font.GothamBold
-FarmToggle.TextSize = 14
-FarmToggle.Parent = MainTab
-
-local FarmCorner = Instance.new("UICorner")
-FarmCorner.CornerRadius = UDim.new(0, 6)
-FarmCorner.Parent = FarmToggle
-
-FarmToggle.MouseButton1Click:Connect(function()
+FarmButton.MouseButton1Click:Connect(function()
     _G.Autofarm = not _G.Autofarm
     if _G.Autofarm then
-        FarmToggle.Text = "Авто-Фарм & Атака: ВКЛ"
-        FarmToggle.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+        FarmButton.Text = "Авто-Квест & Фарм: ВКЛ"
+        FarmButton.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
         AutoAttack()
     else
-        FarmToggle.Text = "Авто-Фарм & Атака: ВЫКЛ"
-        FarmToggle.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+        FarmButton.Text = "Авто-Квест & Фарм: ВЫКЛ"
+        FarmButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     end
 end)
 
--- ДОБАВЛЕНИЕ ФУНКЦИЙ НА ВКЛАДКУ «РЕЙДЫ»
-local RaidButton = Instance.new("TextButton")
-RaidButton.Size = UDim2.new(0, 300, 0, 40)
-RaidButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-RaidButton.Text = "Запустить Авто-Рейд (Тест)"
-RaidButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-RaidButton.Font = Enum.Font.Gotham
-RaidButton.TextSize = 14
-RaidButton.Parent = RaidTab
-
-RaidButton.MouseButton1Click:Connect(function()
-    print("Функция Авто-Рейда активирована! (Ожидает интеграции данжа)")
-end)
-
--- ДОБАВЛЕНИЕ ФУНКЦИЙ НА ВКЛАДКУ «РАЗНОЕ»
-local TeleportButton = Instance.new("TextButton")
-TeleportButton.Size = UDim2.new(0, 300, 0, 40)
-TeleportButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-TeleportButton.Text = "ТП в Кафе (Второй Мир)"
+-- КНОПКА ТЕЛЕПОРТА
+TeleportButton.Name = "TeleportButton"
+TeleportButton.Parent = MainFrame
+TeleportButton.Position = UDim2.new(0.1, 0, 0.6, 0)
+TeleportButton.Size = UDim2.new(0, 240, 0, 40)
+TeleportButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+TeleportButton.Text = "ТП в Кафе (2 Мир)"
 TeleportButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-TeleportButton.Font = Enum.Font.Gotham
-TeleportButton.TextSize = 14
-TeleportButton.Parent = MiscTab
+TeleportButton.TextSize = 16
+TeleportButton.Font = Enum.Font.GothamBold
+
+local ButtonCorner2 = Instance.new("UICorner")
+ButtonCorner2.CornerRadius = UDim.new(0, 6)
+ButtonCorner2.Parent = TeleportButton
 
 TeleportButton.MouseButton1Click:Connect(function()
     pcall(function()
         LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1154, 73, 244)
     end)
 end)
-
-print("MbHub успешно загружен!")
-
