@@ -63,18 +63,22 @@ Button.Parent = MainFrame
 _G.AutoRaceV2 = false
 _G.AutoRaceV3 = false
 
--- ФОНОВЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ АВТО-РАСЫ
-task.spawn(function()
-    while task.wait(1) do
+-- ОПТИМИЗИРОВАННЫЙ БЕЗОПАСНЫЙ ПОТОК (Не грузит процессор Delta)
+spawn(function()
+    while true do
+        task.wait(2) -- Задержка увеличена до 2 секунд во избежание лагов Delta
+        
         -- Логика для Авто Расы V2
         if _G.AutoRaceV2 then
             pcall(function()
-                -- Проверяем, взят ли квест у Алхимика (Alchemist) в Зеленой зоне
-                -- Скрипт пытается автоматически поговорить с ним и сдать цветы
-                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Alchemist","Dialogue")
+                -- Попытка поговорить с Алхимиком
+                local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes") and game:GetService("ReplicatedStorage").Remotes:FindFirstChild("CommF_")
+                if remote then
+                    remote:InvokeServer("Alchemist", "Dialogue")
+                end
                 
-                -- Авто-сбор цветов во Втором море (если они заспавнились)
-                for _, v in pairs(game:GetService("Workspace"):GetChildren()) do
+                -- Безопасный сбор цветов
+                for _, v in pairs(workspace:GetChildren()) do
                     if v.Name == "Flower1" or v.Name == "Flower2" or v.Name == "Flower3" then
                         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                             player.Character.HumanoidRootPart.CFrame = v.CFrame
@@ -88,17 +92,17 @@ task.spawn(function()
         -- Логика для Авто Расы V3
         if _G.AutoRaceV3 then
             pcall(function()
-                -- Автоматический разговор с NPC Arowe для получения квеста на V3
-                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Arowe","Dialogue")
+                local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes") and game:GetService("ReplicatedStorage").Remotes:FindFirstChild("CommF_")
+                if remote then
+                    remote:InvokeServer("Arowe", "Dialogue")
+                end
                 
-                -- Пример автоматизации: если вы Минг (Mink), скрипт ищет сундуки для квеста V3
-                if player.Data.Race.Value == "Mink" then
-                    for _, v in pairs(game:GetService("Workspace"):GetChildren()) do
-                        if v.Name == "Chest1" or v.Name == "Chest2" or v.Name == "Chest3" then
-                            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                                player.Character.HumanoidRootPart.CFrame = v.CFrame
-                                task.wait(0.3)
-                            end
+                -- Авто-сбор сундуков для квеста расы Mink (В3)
+                for _, v in pairs(workspace:GetChildren()) do
+                    if string.find(v.Name, "Chest") then
+                        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                            player.Character.HumanoidRootPart.CFrame = v.CFrame
+                            task.wait(0.5)
                         end
                     end
                 end
