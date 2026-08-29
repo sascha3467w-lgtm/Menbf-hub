@@ -5,7 +5,7 @@ local pgui = player:WaitForChild("PlayerGui")
 if pgui:FindFirstChild("AngryKeySystemGui") then pgui.AngryKeySystemGui:Destroy() end
 if pgui:FindFirstChild("AngryMainGui") then pgui.AngryMainGui:Destroy() end
 
--- Создаем основу для GUI внутри PlayerGui (100% обход блокировок)
+-- Создаем основу для GUI внутри PlayerGui
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AngryKeySystemGui"
 ScreenGui.Parent = pgui
@@ -59,9 +59,53 @@ Button.TextSize = 16
 Button.Font = Enum.Font.SourceSansBold
 Button.Parent = MainFrame
 
--- Функции
+-- Переменные функций
 _G.AutoRaceV2 = false
 _G.AutoRaceV3 = false
+
+-- ФОНОВЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ АВТО-РАСЫ
+task.spawn(function()
+    while task.wait(1) do
+        -- Логика для Авто Расы V2
+        if _G.AutoRaceV2 then
+            pcall(function()
+                -- Проверяем, взят ли квест у Алхимика (Alchemist) в Зеленой зоне
+                -- Скрипт пытается автоматически поговорить с ним и сдать цветы
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Alchemist","Dialogue")
+                
+                -- Авто-сбор цветов во Втором море (если они заспавнились)
+                for _, v in pairs(game:GetService("Workspace"):GetChildren()) do
+                    if v.Name == "Flower1" or v.Name == "Flower2" or v.Name == "Flower3" then
+                        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                            player.Character.HumanoidRootPart.CFrame = v.CFrame
+                            task.wait(0.5)
+                        end
+                    end
+                end
+            end)
+        end
+        
+        -- Логика для Авто Расы V3
+        if _G.AutoRaceV3 then
+            pcall(function()
+                -- Автоматический разговор с NPC Arowe для получения квеста на V3
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Arowe","Dialogue")
+                
+                -- Пример автоматизации: если вы Минг (Mink), скрипт ищет сундуки для квеста V3
+                if player.Data.Race.Value == "Mink" then
+                    for _, v in pairs(game:GetService("Workspace"):GetChildren()) do
+                        if v.Name == "Chest1" or v.Name == "Chest2" or v.Name == "Chest3" then
+                            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                                player.Character.HumanoidRootPart.CFrame = v.CFrame
+                                task.wait(0.3)
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
 
 local function CreateMainMenu()
     local MainMenuGui = Instance.new("ScreenGui")
