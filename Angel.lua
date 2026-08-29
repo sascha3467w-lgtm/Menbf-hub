@@ -61,61 +61,80 @@ Button.Parent = MainFrame
 
 -- Переменные функций
 _G.AutoBartilo = false
-_G.AutoRaceV2 = false
 
 -- Точные безопасные координаты для квеста
-local BartiloCFrame = CFrame.new(-1030, 15, -2760)     -- Кафе (Бартило)
+local BartiloCFrame = CFrame.new(-1030, 15, -2760)     -- Возле Бартило в Кафе
 local SwanPiratesSpawn = CFrame.new(-1240, 15, -3900)  -- Спавн Пиратов Свана
 
--- Функция плавного полета (Обход анти-чита)
-local function TweenTP(targetCFrame)
+-- Функция жесткого телепорта с защитой от отката (приостановка скорости)
+local function SecureTP(targetCFrame)
     if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         local hrp = player.Character.HumanoidRootPart
         hrp.Velocity = Vector3.new(0,0,0)
-        local distance = (hrp.Position - targetCFrame.Position).Magnitude
-        if distance > 20 then
-            local tweenInfo = TweenInfo.new(distance / 250, Enum.EasingStyle.Linear)
-            local tween = game:GetService("TweenService"):Create(hrp, tweenInfo, {CFrame = targetCFrame})
-            tween:Play()
-            tween.Completed:Wait()
-        else
-            hrp.CFrame = targetCFrame
-        end
+        task.wait(0.05)
+        hrp.CFrame = targetCFrame
+        task.wait(0.2)
     end
 end
 
--- Автоматический клик (Атака)
+-- Автоматический клик мыши/тапа экрана
 local function AutoClick()
     local virtualUser = game:GetService("VirtualUser")
     virtualUser:CaptureController()
     virtualUser:ClickButton1(Vector2.new(850, 520))
 end
 
--- Использование оружия/боевого стиля в руке
+-- Проверка и экипировка любого оружия из инвентаря
 local function EquipWeapon()
-    if player.Backpack:GetChildren()[1] and not player.Character:FindFirstChildOfClass("Tool") then
+    if player.Backpack and not player.Character:FindFirstChildOfClass("Tool") then
         local tool = player.Backpack:FindFirstChildOfClass("Tool")
         if tool then player.Character.Humanoid:EquipTool(tool) end
     end
 end
 
--- ПОТОК ДЛЯ ВЫПОЛНЕНИЯ КВЕСТА БАРТИЛО
+-- ИСПРАВЛЕННЫЙ ЦИКЛ КВЕСТА БАРТИЛО
 task.defer(function()
     while true do
-        task.wait(0.1)
+        task.wait(0.5) -- Оптимальная задержка против фризов
+        
         if _G.AutoBartilo then
             pcall(function()
-                local questName = player.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text
+                -- Проверяем, взят ли квест на экране игры
+                local mainGui = player.PlayerGui:FindFirstChild("Main")
+                local questTitle = mainGui and mainGui:FindFirstChild("Quest") and mainGui.Quest:FindFirstChild("Container") and mainGui.Quest.Container:FindFirstChild("QuestTitle") and mainGui.Quest.Container.QuestTitle:FindFirstChild("Title")
+                local hasQuest = questTitle and string.find(questTitle.Text, "Swan Pirate")
                 
-                -- Если квест Бартило не взят в интерфейсе игры
-                if not string.find(questName, "Swan Pirate") then
-                    -- Летим к Бартило в кафе
-                    TweenTP(BartiloCFrame)
+                if not hasQuest then
+                    -- ШАГ 1: Летим к Бартило
+                    SecureTP(BartiloCFrame)
+                    task.wait(0.3)
+                    
+                    -- Триггерим диалог
+                    local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes") and game:GetService("ReplicatedStorage").Remotes:FindFirstChild("CommF_")
+                    if remote then
+                        remote:InvokeServer("Bartilo", "Dialogue")
+                    end
                     task.wait(0.5)
-                    -- Говорим с ним через удаленный сервер игры
-                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Bartilo", "Dialogue")
+                    
+                    -- ИМИТАЦИЯ НАЖАТИЯ ДИАЛОГА (Прокликиваем меню Бартило)
+                    local dialogGui = player.PlayerGui:FindFirstChild("DialogueController")
+                    if dialogGui and dialogGui:FindFirstChild("BG") and dialogGui.BG.Visible then
+                        -- Ищем кнопку "Next" или "Sure" в диалоговом окне игры и кликаем
+                        local options = dialogGui.BG:FindFirstChild("Options")
+                        if options then
+                            for _, btn in pairs(options:GetChildren()) do
+                                if btn:IsA("TextButton") and btn.Visible then
+                                    -- Кликаем на первый попавшийся доступный ответ (Next/Sure)
+                                    local events = getconnections(btn.MouseButton1Click)
+                                    for _, connection in pairs(events) do
+                                        connection:Fire()
+                                    end
+                                end
+                            end
+                        end
+                    end
                 else
-                    -- Если квест взят, летим фармить 50 мобов
+                    -- ШАГ 2: Квест взят, летим фармить пиратов
                     local enemies = workspace:FindFirstChild("Enemies")
                     local targetMob = nil
                     
@@ -128,15 +147,14 @@ task.defer(function()
                         end
                     end
                     
-                    -- Если нашли живого пирата Свана
                     if targetMob and targetMob:FindFirstChild("HumanoidRootPart") then
                         EquipWeapon()
-                        -- Тепаемся чуть выше него, чтобы он нас не бил в ответ
-                        TweenTP(targetMob.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        -- Телепортируемся прямо сверху над пиратом (безопасная зона)
+                        SecureTP(targetMob.HumanoidRootPart.CFrame * CFrame.new(0, 6, 0))
                         AutoClick()
                     else
-                        -- Если мобов рядом нет, летим на точку их спавна ждать их появления
-                        TweenTP(SwanPiratesSpawn)
+                        -- Если живых пиратов временно нет, стоим на точке их респавна
+                        SecureTP(SwanPiratesSpawn)
                     end
                 end
             end)
@@ -144,15 +162,15 @@ task.defer(function()
     end
 end)
 
--- Меню хака
+-- Создание интерфейса хака
 local function CreateMainMenu()
     local MainMenuGui = Instance.new("ScreenGui")
     MainMenuGui.Name = "AngryMainGui"
     MainMenuGui.Parent = pgui
 
     local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.new(0, 320, 0, 220)
-    Frame.Position = UDim2.new(0.5, -160, 0.4, -110)
+    Frame.Size = UDim2.new(0, 320, 0, 150)
+    Frame.Position = UDim2.new(0.5, -160, 0.4, -75)
     Frame.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
     Frame.Active = true
     Frame.Draggable = true
@@ -161,18 +179,18 @@ local function CreateMainMenu()
 
     local MTitle = Instance.new("TextLabel")
     MTitle.Size = UDim2.new(1, 0, 0, 45)
-    MTitle.Text = "Angry Hub — Bartilo Edition"
+    MTitle.Text = "Angry Hub — Fixed Bartilo"
     MTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
     MTitle.TextSize = 20
     MTitle.Font = Enum.Font.SourceSansBold
     MTitle.BackgroundColor3 = Color3.fromRGB(160, 30, 30)
     MTitle.Parent = Frame
 
-    -- КНОПКА 1: ФАРМ 50 ПИРАТОВ (КВЕСТ БАРТИЛО)
+    -- Переключатель квеста
     local ToggleBartilo = Instance.new("TextButton")
-    ToggleBartilo.Size = UDim2.new(0, 260, 0, 45)
-    ToggleBartilo.Position = UDim2.new(0.5, -130, 0.3, 5)
-    ToggleBartilo.Text = "Квест Бартило (50 мобов): ВЫКЛ"
+    ToggleBartilo.Size = UDim2.new(0, 260, 0, 50)
+    ToggleBartilo.Position = UDim2.new(0.5, -130, 0.45, 5)
+    ToggleBartilo.Text = "Квест Бартило (50 пиратов): ВЫКЛ"
     ToggleBartilo.TextColor3 = Color3.fromRGB(255, 255, 255)
     ToggleBartilo.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     ToggleBartilo.Font = Enum.Font.SourceSansBold
@@ -181,30 +199,8 @@ local function CreateMainMenu()
 
     ToggleBartilo.MouseButton1Click:Connect(function()
         _G.AutoBartilo = not _G.AutoBartilo
-        ToggleBartilo.Text = _G.AutoBartilo and "Квест Бартило (50 мобов): ВКЛ" or "Квест Бартило (50 мобов): ВЫКЛ"
+        ToggleBartilo.Text = _G.AutoBartilo and "Квест Бартило (50 пиратов): ВКЛ" or "Квест Бартило (50 пиратов): ВЫКЛ"
         ToggleBartilo.BackgroundColor3 = _G.AutoBartilo and Color3.fromRGB(30, 150, 30) or Color3.fromRGB(40, 40, 40)
-    end)
-
-    -- КНОПКА 2: АВТО РАСА V2
-    local ToggleV2 = Instance.new("TextButton")
-    ToggleV2.Size = UDim2.new(0, 260, 0, 45)
-    ToggleV2.Position = UDim2.new(0.5, -130, 0.65, 5)
-    ToggleV2.Text = "Открыть Алхимика (Раса V2)"
-    ToggleV2.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleV2.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    ToggleV2.Font = Enum.Font.SourceSansBold
-    ToggleV2.Parent = Frame
-    Instance.new("UICorner").Parent = ToggleV2
-
-    ToggleV2.MouseButton1Click:Connect(function()
-        _G.AutoRaceV2 = true
-        local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes") and game:GetService("ReplicatedStorage").Remotes:FindFirstChild("CommF_")
-        if remote then
-            -- Тепаемся сразу к алхимику и активируем его, если квест Бартило уже сдан
-            TweenTP(CFrame.new(614, 73, -4095))
-            task.wait(0.5)
-            remote:InvokeServer("Alchemist", "Dialogue")
-        end
     end)
 end
 
