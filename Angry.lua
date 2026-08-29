@@ -63,68 +63,49 @@ Button.Parent = MainFrame
 _G.AutoRaceV2 = false
 _G.AutoRaceV3 = false
 
--- ФУНКЦИЯ ПЛАВНОЙ ТЕЛЕПОРТАЦИИ (Обход анти-чита)
-local function TweenTP(targetCFrame)
+-- Точные неизменяемые координаты для телепортации (Зеленая зона и Гора)
+local AlchemistCFrame = CFrame.new(614, 73, -4095) -- Точное место Алхимика
+local AroweCFrame = CFrame.new(-3523, 239, -510)    -- Точное место Ароуэ (секретная стена на Diamond)
+
+-- Известные фиксированные координаты спавна синих/красных цветов
+local FlowerSpots = {
+    CFrame.new(675, 75, -4380),  -- Около Алхимика
+    CFrame.new(-920, 40, -1920), -- Кладбище
+    CFrame.new(-420, 70, -2980), -- Остров Усоппа
+    CFrame.new(2730, 200, -820)  -- Гора около Фабрики
+}
+
+-- БЕЗОПАСНАЯ ОСТАНОВКА И ПЕРЕМЕЩЕНИЕ
+local function PureTP(targetCFrame)
     if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         local hrp = player.Character.HumanoidRootPart
+        -- Обнуляем физику, чтобы античит не вернул назад
         hrp.Velocity = Vector3.new(0,0,0)
-        
-        -- Рассчитываем время в пути в зависимости от расстояния (безопасная скорость)
-        local distance = (hrp.Position - targetCFrame.Position).Magnitude
-        local speed = 250 -- Скорость полета
-        local duration = distance / speed
-        
-        local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
-        local tween = game:GetService("TweenService"):Create(hrp, tweenInfo, {CFrame = targetCFrame})
-        tween:Play()
-        tween.Completed:Wait() -- Ждем завершения полета
-        task.wait(0.5)
+        task.wait(0.05)
+        hrp.CFrame = targetCFrame
+        task.wait(0.4)
     end
 end
 
--- Функция безопасного разговора с NPC (только при приближении)
-local function TalkToNPC(npcName)
-    local npc = workspace:FindFirstChild("NPCs") and workspace.NPCs:FindFirstChild(npcName) or workspace:FindFirstChild(npcName)
-    if npc and npc:FindFirstChild("HumanoidRootPart") then
-        -- Летим к NPC
-        TweenTP(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
-        -- Только после прилета активируем диалог
-        local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes") and game:GetService("ReplicatedStorage").Remotes:FindFirstChild("CommF_")
-        if remote then
-            remote:InvokeServer(npcName, "Dialogue")
-        end
-    end
-end
-
--- Сбор цветов из правильной папки Blox Fruits
-local function CollectFlowersV2()
-    local itemSpawns = workspace:FindFirstChild("ItemSpawns")
-    if itemSpawns then
-        for _, v in pairs(itemSpawns:GetChildren()) do
-            if (v.Name == "Flower1" or v.Name == "Flower2" or v.Name == "Flower3") and v:IsA("BasePart") then
-                TweenTP(v.CFrame)
-                task.wait(0.5)
-                return true
-            end
-        end
-    end
-    return false
-end
-
--- ОСНОВНОЙ ПОТОК ФУНКЦИЙ (Не зависает)
-spawn(function()
+-- ИЗОЛИРОВАННЫЙ ПОТОК (Защищен от падений и зависаний через task.defer)
+task.defer(function()
     while true do
-        task.wait(2)
+        task.wait(2.5) -- Задержка увеличена, чтобы Delta успевала очищать кэш
         
         -- Логика Авто Расы V2
         if _G.AutoRaceV2 then
             pcall(function()
-                -- Сначала ищем цветы на карте, если они есть — летим собирать
-                local foundFlower = CollectFlowersV2()
+                -- Поочередно проверяем и прыгаем по известным точкам спавна цветов
+                for _, spotCFrame in ipairs(FlowerSpots) do
+                    if not _G.AutoRaceV2 then break end
+                    PureTP(spotCFrame)
+                end
                 
-                -- Если цветов на карте пока нет или мы их собрали, летим к Алхимику
-                if not foundFlower then
-                    TalkToNPC("Alchemist")
+                -- Возвращаемся сдавать квест Алхимику
+                PureTP(AlchemistCFrame)
+                local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes") and game:GetService("ReplicatedStorage").Remotes:FindFirstChild("CommF_")
+                if remote then
+                    remote:InvokeServer("Alchemist", "Dialogue")
                 end
             end)
         end
@@ -132,16 +113,11 @@ spawn(function()
         -- Логика Авто Расы V3
         if _G.AutoRaceV3 then
             pcall(function()
-                -- Летим и говорим с NPC Arowe
-                TalkToNPC("Arowe")
-                
-                -- Авто-сбор сундуков для квеста расы Mink
-                local chests = workspace:FindFirstChild("Chests") or workspace
-                for _, v in pairs(chests:GetChildren()) do
-                    if string.find(v.Name, "Chest") and v:IsA("BasePart") then
-                        TweenTP(v.CFrame)
-                        task.wait(0.5)
-                    end
+                -- Летим к NPC Arowe
+                PureTP(AroweCFrame)
+                local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes") and game:GetService("ReplicatedStorage").Remotes:FindFirstChild("CommF_")
+                if remote then
+                    remote:InvokeServer("Arowe", "Dialogue")
                 end
             end)
         end
